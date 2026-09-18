@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Printer, MapPin, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Printer, MapPin, Phone, MessageCircle, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { LinkButton } from "@/components/ui/Button";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
 import { daysLabel, bucketForDueDate } from "@/lib/deadlines";
 import { LEAD_STAGE_META, deadlineTone } from "@/lib/status";
@@ -51,6 +52,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const canManageProduction = ["ADMIN", "PRODUCTION"].includes(session.role);
   const canManageDelivery = ["ADMIN", "DELIVERY"].includes(session.role);
+  const canEditOrder = session.role === "ADMIN" || (session.role === "SALES" && order.salespersonId === session.userId);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
@@ -75,6 +77,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <LinkButton href={`/orders/${order.id}/print`} variant="outline" size="md">
               <Printer className="h-4 w-4" /> Quotation
             </LinkButton>
+            {canEditOrder && (
+              <>
+                <LinkButton href={`/orders/${order.id}/edit`} variant="outline" size="md">
+                  <Pencil className="h-4 w-4" /> Edit
+                </LinkButton>
+                <DeleteButton
+                  endpoint={`/api/orders/${order.id}`}
+                  confirmMessage={`Delete order ${order.orderNumber}? This removes its production and delivery records too. This cannot be undone.`}
+                  redirectTo="/orders"
+                  label="Delete"
+                  className="h-10 border border-border"
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

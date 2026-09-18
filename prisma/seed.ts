@@ -23,6 +23,7 @@ async function main() {
   // Clean slate
   // -------------------------------------------------------------------
   await prisma.activityLog.deleteMany();
+  await prisma.expense.deleteMany();
   await prisma.file.deleteMany();
   await prisma.productionStatusLog.deleteMany();
   await prisma.productionJob.deleteMany();
@@ -398,6 +399,36 @@ async function main() {
   await seedFile(manilaFiesta.id, "sticker-die-cut-proof.png", FileCategory.PROOF, production.id, true);
 
   console.log("Seeded sample files");
+
+  // -------------------------------------------------------------------
+  // Expenses
+  // -------------------------------------------------------------------
+  const expenseDefs = [
+    { daysAgo: 1, category: "Materials", description: "Tarpaulin roll stock (50m)", amount: 12500, vendor: "Manila Ink & Media Supply", paymentMethod: "Bank Transfer", recordedById: admin.id },
+    { daysAgo: 2, category: "Materials", description: "Vinyl banner rolls + eyelets", amount: 8400, vendor: "Manila Ink & Media Supply", paymentMethod: "Bank Transfer", recordedById: admin.id },
+    { daysAgo: 3, category: "Utilities", description: "Shop electricity bill", amount: 15200, vendor: "Meralco", paymentMethod: "Online Banking", recordedById: admin.id },
+    { daysAgo: 4, category: "Rent", description: "Monthly shop rent", amount: 35000, vendor: "Naga Commercial Properties", paymentMethod: "Bank Transfer", recordedById: admin.id },
+    { daysAgo: 5, category: "Payroll", description: "Production staff overtime pay", amount: 6800, vendor: null, paymentMethod: "Cash", recordedById: admin.id },
+    { daysAgo: 7, category: "Equipment Maintenance", description: "Large-format printer head cleaning + service", amount: 4500, vendor: "PrintTech Services PH", paymentMethod: "Cash", recordedById: admin.id },
+    { daysAgo: 9, category: "Transportation", description: "Fuel for delivery motorcycle", amount: 1800, vendor: "Petron", paymentMethod: "Cash", recordedById: admin.id },
+    { daysAgo: 11, category: "Marketing", description: "Boosted Facebook Page posts", amount: 2500, vendor: "Meta Ads", paymentMethod: "Credit Card", recordedById: admin.id },
+    { daysAgo: 14, category: "Materials", description: "Sticker vinyl + laminate sheets", amount: 5600, vendor: "Manila Ink & Media Supply", paymentMethod: "Cash", recordedById: admin.id },
+    { daysAgo: 18, category: "Office Supplies", description: "Printer ink, paper, invoice booklets", amount: 3200, vendor: "National Book Store", paymentMethod: "Cash", recordedById: admin.id },
+    { daysAgo: 22, category: "Utilities", description: "Water bill", amount: 1450, vendor: "Naga City Water District", paymentMethod: "Online Banking", recordedById: admin.id },
+    { daysAgo: 28, category: "Equipment Maintenance", description: "Cutting machine blade replacement", amount: 2100, vendor: "PrintTech Services PH", paymentMethod: "Cash", recordedById: admin.id },
+  ];
+  await prisma.expense.createMany({
+    data: expenseDefs.map((e) => ({
+      date: daysFromNow(-e.daysAgo, 10),
+      category: e.category,
+      description: e.description,
+      amount: e.amount,
+      vendor: e.vendor,
+      paymentMethod: e.paymentMethod,
+      recordedById: e.recordedById,
+    })),
+  });
+  console.log(`Created ${expenseDefs.length} expenses`);
 
   // -------------------------------------------------------------------
   // Activity log

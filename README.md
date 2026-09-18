@@ -55,7 +55,7 @@ npm run db:push
 
 ## 4. Seed sample data
 
-Seeds 7 users (one per role, two roles doubled up for realism), 12 catalog products, 17 clients, and 14 job orders with a **deliberate mix of deadlines** — overdue, due today, due this week, due later, and already-delivered — so the dashboard is demoable immediately.
+Seeds 7 users (one per role, two roles doubled up for realism), 12 catalog products, 17 clients, 14 job orders with a **deliberate mix of deadlines** — overdue, due today, due this week, due later, and already-delivered — and 12 sample expenses across several categories, so the dashboard and reports are demoable immediately.
 
 ```bash
 npm run db:seed
@@ -99,7 +99,7 @@ npm run db:studio  # Prisma Studio (browse/edit data visually)
 ## Project structure
 
 ```
-prisma/schema.prisma        Data model (Users, Clients, Orders, Production, Delivery, Files, ActivityLog...)
+prisma/schema.prisma        Data model (Users, Clients, Orders, Production, Delivery, Files, Expenses, ActivityLog...)
 prisma/seed.ts                    Demo data seed script
 src/proxy.ts                        Auth + role-based route protection (Next.js middleware)
 src/lib/                              Server utilities: auth, prisma client, storage, deadline logic, RBAC nav
@@ -123,11 +123,18 @@ storage/                              Local file storage root (created at runtim
 | Dashboard | ✅ (all jobs) | ✅ (own clients) | ✅ (production queue) | ✅ (deliveries) | ✅ (view) |
 | CRM | ✅ | ✅ | – | – | ✅ (view + notes) |
 | Products | ✅ | ✅ | – | – | ✅ (view) |
-| Sales & Orders | ✅ | ✅ | – | – | – |
+| Sales & Orders (new/edit/delete) | ✅ | ✅ (own orders) | – | – | – |
 | Production Tracker | ✅ | – | ✅ | – | – |
 | Delivery Tracker | ✅ | – | – | ✅ | – |
 | File Organizer | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Expense Tracker (new/edit/delete) | ✅ | – | – | – | – |
 | Admin (users/activity) | ✅ | – | – | – | – |
 | Job order detail page | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 Access is enforced both in the UI (sidebar only shows permitted links) and at the route/API level (`src/proxy.ts` + per-route checks), so directly visiting a restricted URL redirects/`403`s rather than merely hiding a link.
+
+## Recently added
+
+- **Deadline-first dashboard, now clickable:** the Overdue / Due Today / In Production / Ready for Delivery (or Due This Week) stat tiles at the top of the dashboard jump straight to their section further down the page — no more hunting.
+- **Expense Tracker** (`/expenses`, Admin only): log shop expenses (materials, rent, utilities, payroll, etc.) with full create/edit/delete, a monthly total, and a by-category breakdown.
+- **Sales & Orders CRUD:** orders can now be edited (due date, downpayment, notes, and line items — the total recalculates automatically) or deleted, from both the orders list and the order detail page, in addition to being created.

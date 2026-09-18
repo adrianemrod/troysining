@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CollapsibleSection({
+  id,
   title,
   subtitle,
   count,
   defaultOpen = false,
   children,
 }: {
+  id?: string;
   title: string;
   subtitle?: string;
   count: number;
@@ -19,8 +21,18 @@ export function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
+  useEffect(() => {
+    if (!id) return;
+    const checkHash = () => {
+      if (window.location.hash === `#${id}`) setOpen(true);
+    };
+    checkHash();
+    window.addEventListener("hashchange", checkHash);
+    return () => window.removeEventListener("hashchange", checkHash);
+  }, [id]);
+
   return (
-    <section>
+    <section id={id} className="scroll-mt-24">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left hover:bg-slate-50"

@@ -28,6 +28,10 @@ const ACTION_LABELS: Record<string, string> = {
   PRODUCTION_STAGE_UPDATED: "updated a production stage",
   DELIVERY_STATUS_UPDATED: "updated a delivery status",
   FILE_UPLOADED: "uploaded a file",
+  ORDER_DELETED: "deleted an order",
+  EXPENSE_CREATED: "logged an expense",
+  EXPENSE_UPDATED: "updated an expense",
+  EXPENSE_DELETED: "deleted an expense",
   SYSTEM_SEEDED: "seeded the database",
 };
 

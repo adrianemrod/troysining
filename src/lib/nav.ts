@@ -8,6 +8,7 @@ import {
   Truck,
   FolderOpen,
   ShieldCheck,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/crm", label: "CRM & Clients", icon: Users, roles: ["ADMIN", "SALES", "ENCODER"] },
   { href: "/products", label: "Products", icon: Package, roles: ["ADMIN", "SALES", "ENCODER"] },
   { href: "/orders", label: "Sales & Orders", icon: ClipboardList, roles: ["ADMIN", "SALES"] },
+  { href: "/expenses", label: "Expenses", icon: Wallet, roles: ["ADMIN"] },
   { href: "/production", label: "Production Tracker", icon: Factory, roles: ["ADMIN", "PRODUCTION"] },
   { href: "/delivery", label: "Delivery Tracker", icon: Truck, roles: ["ADMIN", "DELIVERY"] },
   { href: "/files", label: "File Organizer", icon: FolderOpen, roles: ["ADMIN", "SALES", "PRODUCTION", "DELIVERY", "ENCODER"] },

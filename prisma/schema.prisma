@@ -98,6 +98,7 @@ model User {
   activityLogs         ActivityLog[]
   invitesSent          Invite[]             @relation("InviteSender")
   passwordResets        PasswordResetToken[]
+  expensesRecorded      Expense[]
 
   @@index([role])
 }
@@ -300,7 +301,7 @@ model File {
   clientId     String
   client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
   orderId      String?
-  order        Order?       @relation(fields: [orderId], references: [id])
+  order        Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
   uploadedById String
   uploadedBy   User         @relation(fields: [uploadedById], references: [id])
   filename     String
@@ -332,4 +333,26 @@ model ActivityLog {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Expenses
+// ---------------------------------------------------------------------------
+
+model Expense {
+  id            String   @id @default(cuid())
+  date          DateTime
+  category      String
+  description   String
+  amount        Decimal  @db.Decimal(10, 2)
+  vendor        String?
+  paymentMethod String?
+  notes         String?
+  recordedById  String
+  recordedBy    User     @relation(fields: [recordedById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@index([category])
 }

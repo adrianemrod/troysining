@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --color-primary: #1f3f5b;
   --color-primary-hover: #16304a;

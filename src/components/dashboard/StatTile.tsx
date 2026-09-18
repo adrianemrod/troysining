@@ -16,14 +16,16 @@ export function StatTile({
   value,
   icon: Icon,
   tone = "neutral",
+  href,
 }: {
   label: string;
   value: number | string;
   icon: LucideIcon;
   tone?: Tone;
+  href?: string;
 }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
+  const content = (
+    <>
       <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", TONE_CLASSES[tone])}>
         <Icon className="h-5 w-5" strokeWidth={1.9} />
       </div>
@@ -31,6 +33,18 @@ export function StatTile({
         <p className="text-2xl font-bold leading-none text-foreground">{value}</p>
         <p className="mt-1 text-xs font-medium text-muted">{label}</p>
       </div>
-    </div>
+    </>
   );
+
+  const className = "flex items-center gap-3 rounded-xl border border-border bg-surface p-4";
+
+  if (href) {
+    return (
+      <a href={href} className={cn(className, "transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-accent/40")}>
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }

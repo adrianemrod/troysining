@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Plus, TrendingUp, Trophy, Package2 } from "lucide-react";
+import { ClipboardList, Plus, TrendingUp, Trophy, Package2, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatTile } from "@/components/dashboard/StatTile";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
 import { LEAD_STAGE_META } from "@/lib/status";
 
@@ -138,10 +139,13 @@ export default async function OrdersPage() {
                   <th className="px-4 py-2.5 font-medium">Due Date</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
                   <th className="px-4 py-2.5 text-right font-medium">Total</th>
+                  <th className="px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {orders.map((order) => {
+                  const canEdit = session.role === "ADMIN" || order.salespersonId === session.userId;
+                  return (
                   <tr key={order.id} className="border-b border-border last:border-0 hover:bg-canvas/60">
                     <td className="px-4 py-3">
                       <Link href={`/orders/${order.id}`} className="font-medium text-foreground hover:text-accent hover:underline">
@@ -154,8 +158,23 @@ export default async function OrdersPage() {
                       <Badge tone={LEAD_STAGE_META[order.status].tone}>{LEAD_STAGE_META[order.status].label}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right font-medium">{formatPHP(Number(order.totalAmount))}</td>
+                    <td className="px-4 py-3">
+                      {canEdit && (
+                        <div className="flex items-center justify-end gap-1">
+                          <Link href={`/orders/${order.id}/edit`} className="inline-flex items-center gap-1 rounded-lg p-1.5 text-xs font-medium text-accent hover:bg-accent-soft">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Link>
+                          <DeleteButton
+                            endpoint={`/api/orders/${order.id}`}
+                            confirmMessage={`Delete order ${order.orderNumber}? This cannot be undone.`}
+                            iconOnly
+                          />
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </Card>

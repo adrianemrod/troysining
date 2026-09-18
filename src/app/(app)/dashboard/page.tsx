@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, Factory, Truck, PartyPopper } from "lucide-react";
+import { AlertTriangle, CalendarClock, Factory, Truck, PartyPopper, ShieldCheck } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getRoleVisibleOrders, bucketOrders } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
@@ -59,35 +59,37 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label="Overdue" value={overdue.length} icon={AlertTriangle} tone="danger" />
-        <StatTile label="Due Today" value={dueToday.length} icon={CalendarClock} tone="accent" />
-        <StatTile label="In Production" value={inProduction.length} icon={Factory} tone="warning" />
+        <StatTile label="Overdue" value={overdue.length} icon={AlertTriangle} tone="danger" href="#overdue" />
+        <StatTile label="Due Today" value={dueToday.length} icon={CalendarClock} tone="accent" href="#due-today" />
+        <StatTile label="In Production" value={inProduction.length} icon={Factory} tone="warning" href="#in-production" />
         {showReadyForDelivery ? (
-          <StatTile label="Ready for Delivery" value={readyForDelivery.length} icon={Truck} tone="success" />
+          <StatTile label="Ready for Delivery" value={readyForDelivery.length} icon={Truck} tone="success" href="#ready-for-delivery" />
         ) : (
-          <StatTile label="Due This Week" value={thisWeek.length} icon={CalendarClock} tone="neutral" />
+          <StatTile label="Due This Week" value={thisWeek.length} icon={CalendarClock} tone="neutral" href="#upcoming-this-week" />
         )}
       </div>
 
       {/* Overdue — impossible to miss */}
-      {overdue.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <h2 className="text-lg font-bold text-danger">Overdue</h2>
-            <Badge tone="danger" dot>
-              {overdue.length} job{overdue.length === 1 ? "" : "s"} past deadline
-            </Badge>
-          </div>
+      <section id="overdue" className="scroll-mt-24">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-danger">Overdue</h2>
+          <Badge tone="danger" dot>
+            {overdue.length} job{overdue.length === 1 ? "" : "s"} past deadline
+          </Badge>
+        </div>
+        {overdue.length === 0 ? (
+          <EmptyState icon={ShieldCheck} title="Nothing overdue" description="Every job is still within its deadline. Keep it up!" />
+        ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {overdue.map((b) => (
               <JobCard key={b.order.id} order={b.order} bucket={b.bucket} atRisk={b.atRisk} />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Due Today — top priority section */}
-      <section>
+      <section id="due-today" className="scroll-mt-24">
         <div className="mb-3 flex items-center gap-2">
           <h2 className="text-lg font-bold text-foreground">Due Today</h2>
           <Badge tone="accent" dot>
@@ -106,24 +108,28 @@ export default async function DashboardPage() {
       </section>
 
       {/* Ready for Delivery — Admin / Delivery focus */}
-      {showReadyForDelivery && readyForDelivery.length > 0 && (
-        <section>
+      {showReadyForDelivery && (
+        <section id="ready-for-delivery" className="scroll-mt-24">
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Ready for Delivery</h2>
             <Badge tone="success" dot>
               {readyForDelivery.length} job{readyForDelivery.length === 1 ? "" : "s"}
             </Badge>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {readyForDelivery.map((b) => (
-              <JobCard key={b.order.id} order={b.order} bucket={b.bucket} atRisk={b.atRisk} showProgress={false} />
-            ))}
-          </div>
+          {readyForDelivery.length === 0 ? (
+            <EmptyState icon={Truck} title="Nothing ready for delivery yet" description="Jobs that finish Quality Check will show up here." />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {readyForDelivery.map((b) => (
+                <JobCard key={b.order.id} order={b.order} bucket={b.bucket} atRisk={b.atRisk} showProgress={false} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
       {/* In Production Right Now */}
-      <section>
+      <section id="in-production" className="scroll-mt-24">
         <div className="mb-3 flex items-center gap-2">
           <h2 className="text-lg font-bold text-foreground">In Production Right Now</h2>
           <Badge tone="neutral" dot>
@@ -141,8 +147,8 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Upcoming This Week — collapsed by default */}
-      <CollapsibleSection title="Upcoming This Week" subtitle="Due within the next 7 days" count={thisWeek.length}>
+      {/* Upcoming This Week — collapsed by default, auto-expands when linked to */}
+      <CollapsibleSection id="upcoming-this-week" title="Upcoming This Week" subtitle="Due within the next 7 days" count={thisWeek.length}>
         {thisWeek.length === 0 ? (
           <EmptyState title="Nothing else due this week" description="You're all caught up beyond today." />
         ) : (

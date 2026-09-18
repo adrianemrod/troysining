@@ -29,6 +29,15 @@ interface ItemRow {
   specs: string;
 }
 
+interface OrderInitial {
+  id: string;
+  clientLabel: string;
+  dueDate: string;
+  downpayment: number;
+  notes: string;
+  items: ItemRow[];
+}
+
 function defaultDueDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + 3);
@@ -42,6 +51,7 @@ export function OrderForm({
   currentUserId,
   isAdmin,
   preselectedClientId,
+  initial,
 }: {
   clientOptions: ClientOption[];
   productOptions: ProductOption[];
@@ -49,14 +59,18 @@ export function OrderForm({
   currentUserId: string;
   isAdmin: boolean;
   preselectedClientId?: string;
+  initial?: OrderInitial;
 }) {
   const router = useRouter();
+  const isEdit = Boolean(initial);
   const [clientId, setClientId] = useState(preselectedClientId ?? clientOptions[0]?.id ?? "");
   const [salespersonId, setSalespersonId] = useState(currentUserId);
-  const [dueDate, setDueDate] = useState(defaultDueDate());
-  const [downpayment, setDownpayment] = useState("0");
-  const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<ItemRow[]>([{ productId: productOptions[0]?.id ?? "", quantity: 1, specs: "" }]);
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? defaultDueDate());
+  const [downpayment, setDownpayment] = useState(initial?.downpayment?.toString() ?? "0");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [items, setItems] = useState<ItemRow[]>(
+    initial?.items ?? [{ productId: productOptions[0]?.id ?? "", quantity: 1, specs: "" }]
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,25 +94,38 @@ export function OrderForm({
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientId,
-        salespersonId,
-        dueDate: new Date(dueDate).toISOString(),
-        downpayment: Number(downpayment),
-        notes,
-        items: items.filter((i) => i.productId),
-      }),
-    });
+
+    const res = isEdit
+      ? await fetch(`/api/orders/${initial!.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dueDate: new Date(dueDate).toISOString(),
+            downpayment: Number(downpayment),
+            notes,
+            items: items.filter((i) => i.productId),
+          }),
+        })
+      : await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientId,
+            salespersonId,
+            dueDate: new Date(dueDate).toISOString(),
+            downpayment: Number(downpayment),
+            notes,
+            items: items.filter((i) => i.productId),
+          }),
+        });
+
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError(data.error ?? "Could not create order.");
+      setError(data.error ?? `Could not ${isEdit ? "update" : "create"} order.`);
       return;
     }
-    router.push(`/orders/${data.order.id}`);
+    router.push(`/orders/${isEdit ? initial!.id : data.order.id}`);
     router.refresh();
   }
 
@@ -109,17 +136,21 @@ export function OrderForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <FieldGroup>
           <Label htmlFor="client" required>Client</Label>
-          <Select id="client" required value={clientId} onChange={(e) => setClientId(e.target.value)}>
-            {clientOptions.map((c) => (
-              <option key={c.id} value={c.id}>{c.businessName || c.name}</option>
-            ))}
-          </Select>
+          {isEdit ? (
+            <Input value={initial!.clientLabel} disabled />
+          ) : (
+            <Select id="client" required value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              {clientOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.businessName || c.name}</option>
+              ))}
+            </Select>
+          )}
         </FieldGroup>
         <FieldGroup>
           <Label htmlFor="dueDate" required>Due date & time</Label>
           <Input id="dueDate" type="datetime-local" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </FieldGroup>
-        {isAdmin && (
+        {isAdmin && !isEdit && (
           <FieldGroup>
             <Label htmlFor="salesperson">Salesperson</Label>
             <Select id="salesperson" value={salespersonId} onChange={(e) => setSalespersonId(e.target.value)}>
@@ -190,9 +221,9 @@ export function OrderForm({
         <span className="text-lg font-bold text-primary">{formatPHP(total)}</span>
       </div>
 
-      <Button type="submit" disabled={loading || !clientId}>
+      <Button type="submit" disabled={loading || (!isEdit && !clientId)}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Create order
+        {isEdit ? "Save changes" : "Create order"}
       </Button>
     </form>
   );
