@@ -10,7 +10,7 @@ The centerpiece is the **post-login dashboard**: the first thing every user sees
 - **Styling:** Tailwind CSS v4, custom theme tokens (`--color-primary` navy `#1f3f5b`, `--color-accent` orange `#e08b2e`)
 - **Database:** PostgreSQL + Prisma ORM
 - **Auth:** Custom JWT session in an httpOnly cookie (`jose` + `bcryptjs`), role-based access control enforced in `src/proxy.ts` (Next.js middleware) and inside every API route
-- **File storage:** Local filesystem abstraction (`src/lib/storage.ts`), files organized per client under `storage/<clientId>/…`, served via an authenticated route (`/api/files/serve/...`) — swappable for S3 later
+- **File storage:** Local filesystem abstraction (`src/lib/storage.ts`), files organized per client under `storage/<clientId>/…` (override the root with the `STORAGE_ROOT` env var), served via an authenticated route (`/api/files/serve/...`) — swappable for S3 later
 - **Drag & drop:** `@dnd-kit` for the production Kanban board
 - **Icons:** `lucide-react`
 
@@ -95,6 +95,29 @@ npm run start        # run the production build
 npm run lint          # ESLint
 npm run db:studio  # Prisma Studio (browse/edit data visually)
 ```
+
+## Deploying so your team can use it
+
+Running `npm run dev` only serves the app on your own machine — to give your team a real, shared web address, deploy it to a host with (a) a persistent disk, since uploaded files live on disk under `storage/`, and (b) a Postgres database. **[Railway](https://railway.app)** is the easiest fit — it bundles all three (app, Postgres, persistent volume) in one place with a "deploy from GitHub" flow. (If you'd rather use Vercel, it works for the app + a hosted Postgres like Neon, but you'd need to swap `src/lib/storage.ts` for S3-compatible storage first, since Vercel's filesystem isn't persistent — happy to do that swap if you go that route.)
+
+Only you can do the account sign-up itself (that needs your own login/OAuth), but every step is quick:
+
+1. **Sign up at [railway.app](https://railway.app)** — "Login with GitHub" is one click, no credit card needed for the trial.
+2. **New Project → Deploy from GitHub repo** → pick `adrianemrod/troysining` → branch `claude/troysining-printing-system-9ru0ss` (or `main`, once this is merged).
+3. **Add a database:** in the same project, click **+ New → Database → Add PostgreSQL**. Railway wires up its `DATABASE_URL` automatically — reference it in your app service's variables as `DATABASE_URL = ${{Postgres.DATABASE_URL}}`.
+4. **Add a persistent volume** on the app service (Settings → Volumes → New Volume), mount path `/app/storage`. Then add an app variable `STORAGE_ROOT = /app/storage` so uploads always land on that volume.
+5. **Add the remaining variables** on the app service:
+   - `JWT_SECRET` — any long random string (e.g. generate one with `openssl rand -hex 32`)
+   - `NEXT_PUBLIC_APP_NAME` — `Troysining Printing Management System`
+6. **Deploy.** Railway runs `npm install` (which now also runs `prisma generate` automatically), `npm run build`, then `npm run start`.
+7. **Set up the database once:** open the app service's **Shell** tab in Railway (or run these from your own machine with `DATABASE_URL` set to the Railway database's connection string) and run:
+   ```bash
+   npm run db:push
+   npm run db:seed
+   ```
+8. **Get your link:** Railway gives the service a public URL like `https://troysining-production.up.railway.app` (Settings → Networking → Generate Domain). That's the address you send your team — from here on, follow the invite steps in [Recently added](#recently-added) / the Admin panel to bring them in.
+
+Every future `git push` to the connected branch auto-redeploys — no need to repeat these steps.
 
 ## Project structure
 

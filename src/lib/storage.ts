@@ -6,7 +6,9 @@ import { randomUUID } from "crypto";
 // Swap this module's internals for an S3-compatible client later;
 // callers only depend on save()/remove()/urlFor().
 
-const STORAGE_ROOT = path.join(process.cwd(), "storage");
+// Overridable so a host with a persistent volume (e.g. Railway) can mount it
+// somewhere other than the app's working directory.
+const STORAGE_ROOT = process.env.STORAGE_ROOT || path.join(process.cwd(), "storage");
 
 function sanitizeSegment(segment: string): string {
   return segment.replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 80);
