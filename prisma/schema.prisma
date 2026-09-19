@@ -61,6 +61,7 @@ enum FileCategory {
   PROOF
   FINAL
   CONTRACT
+  QUOTATION
   FB_SCREENSHOT
   OTHER
 }

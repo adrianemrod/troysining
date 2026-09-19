@@ -8,6 +8,7 @@ const CATEGORY_META: Record<string, { label: string; tone: Tone }> = {
   DESIGN: { label: "Design File", tone: "info" },
   PROOF: { label: "Proof", tone: "accent" },
   FINAL: { label: "Approved Final", tone: "success" },
+  QUOTATION: { label: "Quotation", tone: "accent" },
   CONTRACT: { label: "Contract", tone: "neutral" },
   FB_SCREENSHOT: { label: "FB Screenshot", tone: "warning" },
   OTHER: { label: "Other", tone: "neutral" },

@@ -121,7 +121,7 @@ storage/                              Local file storage root (created at runtim
 | Area | Admin | Sales | Production | Delivery | Encoder |
 |---|:---:|:---:|:---:|:---:|:---:|
 | Dashboard | ✅ (all jobs) | ✅ (own clients) | ✅ (production queue) | ✅ (deliveries) | ✅ (view) |
-| CRM | ✅ | ✅ | – | – | ✅ (view + notes) |
+| CRM (new/edit/delete, quotation upload) | ✅ | ✅ (own clients) | – | – | ✅ (view + notes) |
 | Products | ✅ | ✅ | – | – | ✅ (view) |
 | Sales & Orders (new/edit/delete) | ✅ | ✅ (own orders) | – | – | – |
 | Production Tracker | ✅ | – | ✅ | – | – |
@@ -138,3 +138,9 @@ Access is enforced both in the UI (sidebar only shows permitted links) and at th
 - **Deadline-first dashboard, now clickable:** the Overdue / Due Today / In Production / Ready for Delivery (or Due This Week) stat tiles at the top of the dashboard jump straight to their section further down the page — no more hunting.
 - **Expense Tracker** (`/expenses`, Admin only): log shop expenses (materials, rent, utilities, payroll, etc.) with full create/edit/delete, a monthly total, and a by-category breakdown.
 - **Sales & Orders CRUD:** orders can now be edited (due date, downpayment, notes, and line items — the total recalculates automatically) or deleted, from both the orders list and the order detail page, in addition to being created.
+- **CRM CRUD:** clients can now be edited or deleted from the client detail page (Sales users are scoped to their own clients).
+- **Monthly trend charts + drill-down stat tiles**, on both Sales & Orders and Expenses:
+  - The "Sales/Expenses This Month" *amount* tile links to a dedicated `/orders/analytics` or `/expenses/analytics` page with a 12-month bar chart, average-per-month, and a month-by-month table (Prisma has no server-side date-trunc across DBs, so months are bucketed in Manila time in application code).
+  - The "Orders/Expenses This Month" *count* tile links back to the list, pre-filtered to the current month via a `?month=YYYY-MM` query param, scrolled straight to the table.
+  - The "Total Orders" / "All-Time Total" tile links to the same table with no filter applied.
+- **Quotation uploads on the client page:** `/crm/[id]` now has an inline file upload (defaulting to a new "Quotation" file category) and a thumbnail grid of everything uploaded for that client, in addition to the full File Organizer.

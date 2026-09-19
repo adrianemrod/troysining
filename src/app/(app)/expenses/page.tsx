@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Wallet, Plus, Pencil, TrendingDown, Receipt } from "lucide-react";
+import { Wallet, Plus, Pencil, TrendingDown, Receipt, LineChart, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
@@ -9,37 +9,42 @@ import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatTile } from "@/components/dashboard/StatTile";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { formatManilaDate, formatPHP } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatManilaDate, formatPHP, cn } from "@/lib/utils";
+import { currentManilaMonth, monthRangeManila, monthLabelManila } from "@/lib/analytics";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-function startOfManilaMonth(): Date {
-  const now = new Date();
-  const manilaStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit" }).format(now);
-  const [year, month] = manilaStr.split("-");
-  return new Date(`${year}-${month}-01T00:00:00+08:00`);
-}
-
-export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ category?: string; month?: string }> }) {
   const session = await getSession();
   if (!session || session.role !== "ADMIN") redirect("/dashboard");
 
-  const { category } = await searchParams;
-  const monthStart = startOfManilaMonth();
+  const { category, month } = await searchParams;
+  const currentMonth = currentManilaMonth();
+  const { start: monthStart } = monthRangeManila(currentMonth);
 
-  const [expenses, monthlyAgg, categoryAgg, allCategories] = await Promise.all([
+  const listWhere: Prisma.ExpenseWhereInput = {};
+  if (category) listWhere.category = category;
+  if (month) {
+    const { start, end } = monthRangeManila(month);
+    listWhere.date = { gte: start, lt: end };
+  }
+
+  const [expenses, allTimeCount, monthlyAgg, categoryAgg, allCategories] = await Promise.all([
     prisma.expense.findMany({
-      where: category ? { category } : undefined,
+      where: listWhere,
       include: { recordedBy: { select: { name: true } } },
       orderBy: { date: "desc" },
     }),
+    prisma.expense.count(),
     prisma.expense.aggregate({ where: { date: { gte: monthStart } }, _sum: { amount: true }, _count: true }),
     prisma.expense.groupBy({ by: ["category"], _sum: { amount: true }, orderBy: { _sum: { amount: "desc" } } }),
     prisma.expense.findMany({ distinct: ["category"], select: { category: true } }),
   ]);
 
   const grandTotal = categoryAgg.reduce((sum, c) => sum + Number(c._sum.amount ?? 0), 0);
+
+  const filterLabel = [month ? monthLabelManila(month) : null, category ?? null].filter(Boolean).join(" · ");
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -56,10 +61,26 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatTile label="This Month" value={formatPHP(Number(monthlyAgg._sum.amount ?? 0))} icon={TrendingDown} tone="danger" />
-        <StatTile label="Expenses This Month" value={monthlyAgg._count} icon={Receipt} tone="accent" />
-        <StatTile label="All-Time Total" value={formatPHP(grandTotal)} icon={Wallet} tone="neutral" />
+        <StatTile
+          label="This Month"
+          value={formatPHP(Number(monthlyAgg._sum.amount ?? 0))}
+          icon={TrendingDown}
+          tone="danger"
+          href="/expenses/analytics"
+        />
+        <StatTile
+          label="Expenses This Month"
+          value={monthlyAgg._count}
+          icon={Receipt}
+          tone="accent"
+          href={`/expenses?month=${currentMonth}#all-expenses`}
+        />
+        <StatTile label="All-Time Total" value={formatPHP(grandTotal)} icon={Wallet} tone="neutral" href="/expenses#all-expenses" />
       </div>
+
+      <LinkButton href="/expenses/analytics" variant="outline" size="sm" className="w-fit">
+        <LineChart className="h-4 w-4" /> View monthly expense trend
+      </LinkButton>
 
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">By Category</h2>
@@ -99,12 +120,23 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
         </ol>
       </Card>
 
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          {category ? `${category} Expenses` : "All Expenses"} ({expenses.length})
-        </h2>
+      <div id="all-expenses" className="scroll-mt-24">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            {filterLabel ? `Expenses — ${filterLabel}` : "All Expenses"} ({expenses.length} of {allTimeCount})
+          </h2>
+          {(month || category) && (
+            <Link href="/expenses#all-expenses" className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover">
+              <X className="h-3.5 w-3.5" /> Clear filters
+            </Link>
+          )}
+        </div>
         {expenses.length === 0 ? (
-          <EmptyState icon={Wallet} title="No expenses recorded" description="Add your first expense to start tracking shop costs." />
+          <EmptyState
+            icon={Wallet}
+            title={filterLabel ? `No expenses for ${filterLabel}` : "No expenses recorded"}
+            description={filterLabel ? "Try a different month or category, or clear the filters." : "Add your first expense to start tracking shop costs."}
+          />
         ) : (
           <Card className="overflow-hidden">
             <table className="w-full text-sm">

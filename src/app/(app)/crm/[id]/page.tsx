@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, ClipboardList, FolderOpen } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, ClipboardList, FolderOpen, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
@@ -8,10 +8,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
 import { LEAD_STAGE_META, CLIENT_TYPE_META } from "@/lib/status";
 import { LeadStageEditor } from "@/components/crm/LeadStageEditor";
 import { NotesTimeline } from "@/components/crm/NotesTimeline";
+import { UploadFileForm } from "@/components/files/UploadFileForm";
+import { FileCard } from "@/components/files/FileCard";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       salesOwner: { select: { id: true, name: true, avatarColor: true } },
       notes: { include: { author: { select: { id: true, name: true, avatarColor: true } } }, orderBy: { createdAt: "desc" } },
       orders: { orderBy: { createdAt: "desc" }, include: { items: true } },
+      files: { include: { uploadedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -33,6 +37,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
   const canEdit = ["ADMIN", "SALES"].includes(session.role);
   const canNote = ["ADMIN", "SALES", "ENCODER"].includes(session.role);
+  const canManage = session.role === "ADMIN" || (session.role === "SALES" && client.salesOwnerId === session.userId);
+  const canUploadFiles = ["ADMIN", "SALES", "PRODUCTION", "DELIVERY", "ENCODER"].includes(session.role);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -45,14 +51,30 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             <h1 className="text-2xl font-bold text-foreground">{client.businessName || client.name}</h1>
             {client.businessName && <p className="text-sm text-muted">{client.name}</p>}
           </div>
-          {canEdit ? (
-            <LeadStageEditor clientId={client.id} initialStage={client.leadStage} initialType={client.clientType} />
-          ) : (
-            <div className="flex gap-2">
-              <Badge tone={LEAD_STAGE_META[client.leadStage].tone}>{LEAD_STAGE_META[client.leadStage].label}</Badge>
-              <Badge tone={CLIENT_TYPE_META[client.clientType].tone}>{CLIENT_TYPE_META[client.clientType].label}</Badge>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {canEdit ? (
+              <LeadStageEditor clientId={client.id} initialStage={client.leadStage} initialType={client.clientType} />
+            ) : (
+              <>
+                <Badge tone={LEAD_STAGE_META[client.leadStage].tone}>{LEAD_STAGE_META[client.leadStage].label}</Badge>
+                <Badge tone={CLIENT_TYPE_META[client.clientType].tone}>{CLIENT_TYPE_META[client.clientType].label}</Badge>
+              </>
+            )}
+            {canManage && (
+              <>
+                <LinkButton href={`/crm/${client.id}/edit`} variant="outline" size="md">
+                  <Pencil className="h-4 w-4" /> Edit
+                </LinkButton>
+                <DeleteButton
+                  endpoint={`/api/clients/${client.id}`}
+                  confirmMessage={`Delete ${client.businessName || client.name}? This removes their notes too. Clients with existing orders can't be deleted. This cannot be undone.`}
+                  redirectTo="/crm"
+                  label="Delete"
+                  className="h-10 border border-border"
+                />
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -97,6 +119,34 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             )}
           </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <FolderOpen className="h-4 w-4 text-primary" /> Files & Quotations
+              </h2>
+              <Link href={`/files?client=${client.id}`} className="text-xs font-medium text-accent hover:text-accent-hover">
+                Open File Organizer
+              </Link>
+            </div>
+            <p className="mt-1 text-sm text-muted">Upload a quotation, design file, proof, contract, or FB screenshot for this client.</p>
+
+            {canUploadFiles && (
+              <div className="mt-4">
+                <UploadFileForm clientId={client.id} defaultCategory="QUOTATION" />
+              </div>
+            )}
+
+            {client.files.length === 0 ? (
+              <EmptyState title="No files yet" description="Uploaded quotations and documents will show up here." className="py-8" />
+            ) : (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {client.files.map((f) => (
+                  <FileCard key={f.id} file={{ ...f, createdAt: f.createdAt.toISOString() }} />
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
         <div className="space-y-6">
@@ -128,17 +178,6 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             </Card>
           )}
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <FolderOpen className="h-4 w-4 text-primary" /> Files
-              </h2>
-            </div>
-            <p className="mt-2 text-sm text-muted">Design files, proofs, contracts, and FB screenshots for this client.</p>
-            <LinkButton href={`/files?client=${client.id}`} variant="outline" size="sm" className="mt-3">
-              Open File Organizer
-            </LinkButton>
-          </Card>
         </div>
       </div>
     </div>

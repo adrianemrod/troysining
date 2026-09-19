@@ -10,14 +10,15 @@ const CATEGORIES: { value: string; label: string }[] = [
   { value: "DESIGN", label: "Design File" },
   { value: "PROOF", label: "Proof" },
   { value: "FINAL", label: "Approved Final" },
+  { value: "QUOTATION", label: "Quotation" },
   { value: "CONTRACT", label: "Contract" },
   { value: "FB_SCREENSHOT", label: "FB Chat Screenshot" },
   { value: "OTHER", label: "Other" },
 ];
 
-export function UploadFileForm({ clientId }: { clientId: string }) {
+export function UploadFileForm({ clientId, defaultCategory = "DESIGN" }: { clientId: string; defaultCategory?: string }) {
   const router = useRouter();
-  const [category, setCategory] = useState("DESIGN");
+  const [category, setCategory] = useState(defaultCategory);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

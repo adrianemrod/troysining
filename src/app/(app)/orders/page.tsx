@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Plus, TrendingUp, Trophy, Package2, Pencil } from "lucide-react";
+import { ClipboardList, Plus, TrendingUp, Trophy, Package2, Pencil, LineChart, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
@@ -10,31 +10,32 @@ import { StatTile } from "@/components/dashboard/StatTile";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
 import { LEAD_STAGE_META } from "@/lib/status";
+import { currentManilaMonth, monthRangeManila, monthLabelManila } from "@/lib/analytics";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-function startOfManilaMonth(): Date {
-  const now = new Date();
-  const manilaStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit" }).format(now);
-  const [year, month] = manilaStr.split("-");
-  // Manila is UTC+8 with no DST — month start in Manila translates to the previous UTC day at 16:00.
-  return new Date(`${year}-${month}-01T00:00:00+08:00`);
-}
-
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const session = await getSession();
   if (!session) return null;
 
-  const where = session.role === "SALES" ? { salespersonId: session.userId } : {};
-  const monthStart = startOfManilaMonth();
+  const { month } = await searchParams;
+  const where: Prisma.OrderWhereInput = session.role === "SALES" ? { salespersonId: session.userId } : {};
+  const currentMonth = currentManilaMonth();
+  const { start: monthStart } = monthRangeManila(currentMonth);
 
-  const [orders, monthlyAgg, topClientsAgg, topItemsAgg] = await Promise.all([
+  const listWhere: Prisma.OrderWhereInput = month
+    ? { ...where, createdAt: { gte: monthRangeManila(month).start, lt: monthRangeManila(month).end } }
+    : where;
+
+  const [orders, totalOrderCount, monthlyAgg, topClientsAgg, topItemsAgg] = await Promise.all([
     prisma.order.findMany({
-      where,
+      where: listWhere,
       include: { client: true, salesperson: { select: { name: true } }, items: true },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: month ? undefined : 100,
     }),
+    prisma.order.count({ where }),
     prisma.order.aggregate({ where: { ...where, createdAt: { gte: monthStart } }, _sum: { totalAmount: true }, _count: true }),
     prisma.order.groupBy({
       by: ["clientId"],
@@ -66,7 +67,7 @@ export default async function OrdersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Sales & Orders</h1>
-          <p className="mt-1 text-sm text-muted">{orders.length} order{orders.length === 1 ? "" : "s"} on record</p>
+          <p className="mt-1 text-sm text-muted">{totalOrderCount} order{totalOrderCount === 1 ? "" : "s"} on record</p>
         </div>
         {canCreate && (
           <LinkButton href="/orders/new">
@@ -76,10 +77,26 @@ export default async function OrdersPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatTile label="Sales This Month" value={formatPHP(Number(monthlyAgg._sum.totalAmount ?? 0))} icon={TrendingUp} tone="success" />
-        <StatTile label="Orders This Month" value={monthlyAgg._count} icon={ClipboardList} tone="accent" />
-        <StatTile label="Total Orders" value={orders.length} icon={Package2} tone="neutral" />
+        <StatTile
+          label="Sales This Month"
+          value={formatPHP(Number(monthlyAgg._sum.totalAmount ?? 0))}
+          icon={TrendingUp}
+          tone="success"
+          href="/orders/analytics"
+        />
+        <StatTile
+          label="Orders This Month"
+          value={monthlyAgg._count}
+          icon={ClipboardList}
+          tone="accent"
+          href={`/orders?month=${currentMonth}#all-orders`}
+        />
+        <StatTile label="Total Orders" value={totalOrderCount} icon={Package2} tone="neutral" href="/orders#all-orders" />
       </div>
+
+      <LinkButton href="/orders/analytics" variant="outline" size="sm" className="w-fit">
+        <LineChart className="h-4 w-4" /> View monthly sales trend
+      </LinkButton>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
@@ -125,10 +142,23 @@ export default async function OrdersPage() {
         </Card>
       </div>
 
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">All Orders</h2>
+      <div id="all-orders" className="scroll-mt-24">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            {month ? `Orders in ${monthLabelManila(month)}` : "All Orders"} ({orders.length})
+          </h2>
+          {month && (
+            <Link href="/orders#all-orders" className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover">
+              <X className="h-3.5 w-3.5" /> Clear filter
+            </Link>
+          )}
+        </div>
         {orders.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="No orders yet" description="Create your first job order from a client quotation." />
+          <EmptyState
+            icon={ClipboardList}
+            title={month ? `No orders in ${monthLabelManila(month)}` : "No orders yet"}
+            description={month ? "Try a different month or clear the filter." : "Create your first job order from a client quotation."}
+          />
         ) : (
           <Card className="overflow-hidden">
             <table className="w-full text-sm">

@@ -10,7 +10,7 @@ const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/invite"
 // job order from the dashboard, kanban, or delivery board, even if the *list* views are restricted.
 const ROLE_GATES: { test: (pathname: string) => boolean; roles: string[] }[] = [
   { test: (p) => p.startsWith("/admin"), roles: ["ADMIN"] },
-  { test: (p) => p === "/orders" || p === "/orders/new", roles: ["ADMIN", "SALES"] },
+  { test: (p) => p === "/orders" || p === "/orders/new" || p === "/orders/analytics", roles: ["ADMIN", "SALES"] },
   { test: (p) => p.startsWith("/crm"), roles: ["ADMIN", "SALES", "ENCODER"] },
   { test: (p) => p.startsWith("/products"), roles: ["ADMIN", "SALES", "ENCODER"] },
   { test: (p) => p.startsWith("/production"), roles: ["ADMIN", "PRODUCTION"] },

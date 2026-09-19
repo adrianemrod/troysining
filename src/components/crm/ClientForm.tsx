@@ -13,17 +13,41 @@ interface SalesOption {
   name: string;
 }
 
-export function ClientForm({ salesOptions, currentUserId, isAdmin }: { salesOptions: SalesOption[]; currentUserId: string; isAdmin: boolean }) {
+interface ClientInitial {
+  id: string;
+  name: string;
+  businessName: string;
+  contactNumber: string;
+  fbHandle: string;
+  email: string;
+  address: string;
+  clientType: ClientType;
+  leadStage: LeadStage;
+  salesOwnerId: string;
+}
+
+export function ClientForm({
+  salesOptions,
+  currentUserId,
+  isAdmin,
+  initial,
+}: {
+  salesOptions: SalesOption[];
+  currentUserId: string;
+  isAdmin: boolean;
+  initial?: ClientInitial;
+}) {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
-  const [fbHandle, setFbHandle] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [clientType, setClientType] = useState<ClientType>("ONE_TIME");
-  const [leadStage, setLeadStage] = useState<LeadStage>("NEW_INQUIRY");
-  const [salesOwnerId, setSalesOwnerId] = useState(currentUserId);
+  const isEdit = Boolean(initial);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [businessName, setBusinessName] = useState(initial?.businessName ?? "");
+  const [contactNumber, setContactNumber] = useState(initial?.contactNumber ?? "");
+  const [fbHandle, setFbHandle] = useState(initial?.fbHandle ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [address, setAddress] = useState(initial?.address ?? "");
+  const [clientType, setClientType] = useState<ClientType>(initial?.clientType ?? "ONE_TIME");
+  const [leadStage, setLeadStage] = useState<LeadStage>(initial?.leadStage ?? "NEW_INQUIRY");
+  const [salesOwnerId, setSalesOwnerId] = useState(initial?.salesOwnerId ?? currentUserId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,18 +55,19 @@ export function ClientForm({ salesOptions, currentUserId, isAdmin }: { salesOpti
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/clients", {
-      method: "POST",
+    const payload = { name, businessName, contactNumber, fbHandle, email, address, clientType, leadStage, salesOwnerId };
+    const res = await fetch(isEdit ? `/api/clients/${initial!.id}` : "/api/clients", {
+      method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, businessName, contactNumber, fbHandle, email, address, clientType, leadStage, salesOwnerId }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError(data.error ?? "Could not create client.");
+      setError(data.error ?? `Could not ${isEdit ? "update" : "create"} client.`);
       return;
     }
-    router.push(`/crm/${data.client.id}`);
+    router.push(`/crm/${isEdit ? initial!.id : data.client.id}`);
     router.refresh();
   }
 
@@ -105,7 +130,7 @@ export function ClientForm({ salesOptions, currentUserId, isAdmin }: { salesOpti
 
       <Button type="submit" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Save client
+        {isEdit ? "Save changes" : "Save client"}
       </Button>
     </form>
   );

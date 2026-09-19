@@ -27,6 +27,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
+
+  if (session.role === "SALES") {
+    const existing = await prisma.client.findUnique({ where: { id }, select: { salesOwnerId: true } });
+    if (!existing || existing.salesOwnerId !== session.userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
@@ -43,10 +51,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || !["ADMIN", "SALES"].includes(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
+
+  if (session.role === "SALES") {
+    const existing = await prisma.client.findUnique({ where: { id }, select: { salesOwnerId: true } });
+    if (!existing || existing.salesOwnerId !== session.userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   try {
     await prisma.client.delete({ where: { id } });
   } catch {
