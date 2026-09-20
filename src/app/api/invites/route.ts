@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { getAppUrl } from "@/lib/env";
 import { Role } from "@prisma/client";
 
 export async function GET() {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     details: `Invited ${email} as ${role}`,
   });
 
-  const inviteLink = `${req.nextUrl.origin}/invite/${token}`;
+  const inviteLink = `${getAppUrl(req)}/invite/${token}`;
   console.log(`[team invite] ${email} (${role}) -> ${inviteLink}`);
 
   return NextResponse.json({ invite, inviteLink });

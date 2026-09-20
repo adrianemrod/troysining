@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { getAppUrl } from "@/lib/env";
 
 const SESSION_COOKIE = "troysining_session";
 
@@ -52,7 +53,7 @@ export async function proxy(req: NextRequest) {
 
   if (!session) {
     if (isApi) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const loginUrl = new URL("/login", req.url);
+    const loginUrl = new URL("/login", getAppUrl(req));
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -60,7 +61,7 @@ export async function proxy(req: NextRequest) {
   const gate = ROLE_GATES.find((g) => g.test(pathname));
   if (gate && !gate.roles.includes(session.role ?? "")) {
     if (isApi) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/dashboard", getAppUrl(req)));
   }
 
   return NextResponse.next();

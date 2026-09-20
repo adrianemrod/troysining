@@ -110,12 +110,15 @@ Only you can do the account sign-up itself (that needs your own login/OAuth), bu
    - `JWT_SECRET` — any long random string (e.g. generate one with `openssl rand -hex 32`)
    - `NEXT_PUBLIC_APP_NAME` — `Troysining Printing Management System`
 6. **Deploy.** Railway runs `npm install` (which now also runs `prisma generate` automatically), `npm run build`, then `npm run start`.
-7. **Set up the database once:** open the app service's **Shell** tab in Railway (or run these from your own machine with `DATABASE_URL` set to the Railway database's connection string) and run:
+7. **Get your link:** Settings → Networking → Generate Domain. Railway gives you a public URL like `https://troysining-production.up.railway.app`.
+8. **Add one more variable — this one matters:** `APP_URL = https://<the domain from step 7>`. Without this, links the app builds for you (team invites, password resets) resolve to Railway's *internal* address instead of your real domain and won't work for anyone outside the container. Setting `APP_URL` explicitly is what fixes that.
+9. **Set up the database once:** open the app service's **Console** tab in Railway (or run these from your own machine with `DATABASE_URL` set to the Railway database's connection string) and run:
    ```bash
    npm run db:push
    npm run db:seed
    ```
-8. **Get your link:** Railway gives the service a public URL like `https://troysining-production.up.railway.app` (Settings → Networking → Generate Domain). That's the address you send your team — from here on, follow the invite steps in [Recently added](#recently-added) / the Admin panel to bring them in.
+
+That URL from step 7 is the address you send your team — from here on, follow the invite steps in [Recently added](#recently-added) / the Admin panel to bring them in.
 
 Every future `git push` to the connected branch auto-redeploys — no need to repeat these steps.
 

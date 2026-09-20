@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getAppUrl } from "@/lib/env";
 
 // No transactional email provider is configured for this local/demo system,
 // so the reset link is returned directly in the response and logged to the
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const resetLink = `${req.nextUrl.origin}/reset-password/${token}`;
+  const resetLink = `${getAppUrl(req)}/reset-password/${token}`;
   console.log(`[password reset] ${email} -> ${resetLink}`);
 
   return NextResponse.json({
