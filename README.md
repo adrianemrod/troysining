@@ -96,6 +96,16 @@ npm run lint          # ESLint
 npm run db:studio  # Prisma Studio (browse/edit data visually)
 ```
 
+### Starting fresh on a real deployment
+
+Once you're ready to stop demoing and use this for real clients, wipe the sample data while **keeping every team member's login intact**:
+
+```bash
+npx tsx prisma/clear-business-data.ts --confirm
+```
+
+This deletes all clients, orders, products, expenses, production/delivery records, notes, uploaded files, and the activity log — leaving user accounts untouched, so nobody gets locked out. It refuses to run without `--confirm` (running it bare just prints what it would do). This is separate from `npm run db:reset`, which wipes *and* reseeds fake demo data — don't use that on a real deployment.
+
 ## Deploying so your team can use it
 
 Running `npm run dev` only serves the app on your own machine — to give your team a real, shared web address, deploy it to a host with (a) a persistent disk, since uploaded files live on disk under `storage/`, and (b) a Postgres database. **[Railway](https://railway.app)** is the easiest fit — it bundles all three (app, Postgres, persistent volume) in one place with a "deploy from GitHub" flow. (If you'd rather use Vercel, it works for the app + a hosted Postgres like Neon, but you'd need to swap `src/lib/storage.ts` for S3-compatible storage first, since Vercel's filesystem isn't persistent — happy to do that swap if you go that route.)
