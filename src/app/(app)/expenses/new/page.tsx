@@ -7,7 +7,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 export default async function NewExpensePage() {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") redirect("/expenses");
+  if (!session || !["ADMIN", "SALES"].includes(session.role)) redirect("/expenses");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 pb-16">

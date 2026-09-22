@@ -163,7 +163,7 @@ storage/                              Local file storage root (created at runtim
 | Production Tracker | ✅ | – | ✅ | – | – |
 | Delivery Tracker | ✅ | – | – | ✅ | – |
 | File Organizer | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Expense Tracker (new/edit/delete) | ✅ | – | – | – | – |
+| Expense Tracker (new/edit/delete) | ✅ | ✅ | – | – | – |
 | Admin (users/activity) | ✅ | – | – | – | – |
 | Job order detail page | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -172,7 +172,7 @@ Access is enforced both in the UI (sidebar only shows permitted links) and at th
 ## Recently added
 
 - **Deadline-first dashboard, now clickable:** the Overdue / Due Today / In Production / Ready for Delivery (or Due This Week) stat tiles at the top of the dashboard jump straight to their section further down the page — no more hunting.
-- **Expense Tracker** (`/expenses`, Admin only): log shop expenses (materials, rent, utilities, payroll, etc.) with full create/edit/delete, a monthly total, and a by-category breakdown.
+- **Expense Tracker** (`/expenses`, Admin and Sales): log shop expenses (materials, rent, utilities, payroll, etc.) with full create/edit/delete, a monthly total, and a by-category breakdown.
 - **Sales & Orders CRUD:** orders can now be edited (due date, downpayment, notes, and line items — the total recalculates automatically) or deleted, from both the orders list and the order detail page, in addition to being created.
 - **CRM CRUD:** clients can now be edited or deleted from the client detail page (Sales users are scoped to their own clients).
 - **Monthly trend charts + drill-down stat tiles**, on both Sales & Orders and Expenses:

@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ category?: string; month?: string }> }) {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") redirect("/dashboard");
+  if (!session || !["ADMIN", "SALES"].includes(session.role)) redirect("/dashboard");
 
   const { category, month } = await searchParams;
   const currentMonth = currentManilaMonth();

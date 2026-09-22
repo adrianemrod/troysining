@@ -15,7 +15,7 @@ const MONTHS_SHOWN = 12;
 
 export default async function ExpenseAnalyticsPage() {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") redirect("/dashboard");
+  if (!session || !["ADMIN", "SALES"].includes(session.role)) redirect("/dashboard");
 
   const since = monthsAgoStart(MONTHS_SHOWN);
 

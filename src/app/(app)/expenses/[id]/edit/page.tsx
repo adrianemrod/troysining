@@ -8,7 +8,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 export default async function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") redirect("/expenses");
+  if (!session || !["ADMIN", "SALES"].includes(session.role)) redirect("/expenses");
 
   const { id } = await params;
   const expense = await prisma.expense.findUnique({ where: { id } });

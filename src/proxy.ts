@@ -16,7 +16,7 @@ const ROLE_GATES: { test: (pathname: string) => boolean; roles: string[] }[] = [
   { test: (p) => p.startsWith("/products"), roles: ["ADMIN", "SALES", "ENCODER"] },
   { test: (p) => p.startsWith("/production"), roles: ["ADMIN", "PRODUCTION"] },
   { test: (p) => p.startsWith("/delivery"), roles: ["ADMIN", "DELIVERY"] },
-  { test: (p) => p.startsWith("/expenses"), roles: ["ADMIN"] },
+  { test: (p) => p.startsWith("/expenses"), roles: ["ADMIN", "SALES"] },
 ];
 
 function secretKey() {
