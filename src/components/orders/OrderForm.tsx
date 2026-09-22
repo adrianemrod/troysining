@@ -74,7 +74,7 @@ export function OrderForm({
   const [items, setItems] = useState<ItemRow[]>(
     initial?.items ?? [
       {
-        isCustom: productOptions.length === 0,
+        isCustom: true,
         productId: productOptions[0]?.id ?? "",
         customName: "",
         customPrice: "",
@@ -103,7 +103,7 @@ export function OrderForm({
     setItems((prev) => [
       ...prev,
       {
-        isCustom: productOptions.length === 0,
+        isCustom: true,
         productId: productOptions[0]?.id ?? "",
         customName: "",
         customPrice: "",
