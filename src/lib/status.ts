@@ -52,7 +52,7 @@ export const ROLE_META: Record<Role, StatusMeta> = {
   SALES: { label: "Sales", tone: "info" },
   PRODUCTION: { label: "Production", tone: "warning" },
   DELIVERY: { label: "Delivery", tone: "success" },
-  ENCODER: { label: "Encoder / Staff", tone: "neutral" },
+  ENCODER: { label: "Graphic Artist / Digital Operator", tone: "neutral" },
 };
 
 export function deadlineTone(bucket: "overdue" | "today" | "this_week" | "later"): Tone {

@@ -5,5 +5,5 @@ export const ROLE_LABELS: Record<Role, string> = {
   SALES: "Sales",
   PRODUCTION: "Production",
   DELIVERY: "Delivery / Logistics",
-  ENCODER: "Encoder / Staff",
+  ENCODER: "Graphic Artist / Digital Operator",
 };
