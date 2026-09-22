@@ -158,10 +158,10 @@ storage/                              Local file storage root (created at runtim
 |---|:---:|:---:|:---:|:---:|:---:|
 | Dashboard | ✅ (all jobs) | ✅ (own clients) | ✅ (production queue) | ✅ (deliveries) | ✅ (view) |
 | CRM (new/edit/delete, quotation upload) | ✅ | ✅ (own clients) | – | – | ✅ (view + notes) |
-| Products | ✅ | ✅ | – | – | ✅ (view) |
+| Products | ✅ | ✅ | – | – | – |
 | Sales & Orders (new/edit/delete) | ✅ | ✅ (own orders) | – | – | – |
 | Production Tracker | ✅ | – | ✅ | – | – |
-| Delivery Tracker | ✅ | – | – | ✅ | – |
+| Delivery Tracker | ✅ | – | – | ✅ | ✅ (view) |
 | File Organizer | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Expense Tracker (new/edit/delete) | ✅ | ✅ | – | – | – |
 | Admin (users/activity) | ✅ | – | – | – | – |
