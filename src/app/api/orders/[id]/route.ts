@@ -46,18 +46,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof body.dueDate === "string") data.dueDate = new Date(body.dueDate);
   if (typeof body.status === "string") data.status = body.status;
 
+  type IncomingItem = { productId?: string; customName?: string; unitPrice?: number; quantity: number; specs?: string };
+
   let totalAmount: number | undefined;
   if (Array.isArray(body.items) && body.items.length > 0) {
-    const productIds: string[] = body.items.map((i: { productId: string }) => i.productId);
+    const incomingItems = body.items as IncomingItem[];
+    const productIds = incomingItems.filter((i) => i.productId).map((i) => i.productId as string);
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    const items = body.items.map((i: { productId: string; quantity: number; specs?: string }) => {
-      const product = productMap.get(i.productId);
-      if (!product) throw new Error("Invalid product in order items");
-      const unitPrice = Number(product.unitPrice);
+    const items = incomingItems.map((i) => {
       const quantity = Math.max(1, Number(i.quantity) || 1);
-      return { productId: product.id, quantity, unitPrice, specs: i.specs || null, subtotal: unitPrice * quantity };
+      if (i.productId) {
+        const product = productMap.get(i.productId);
+        if (!product) throw new Error("Invalid product in order items");
+        const unitPrice = Number(product.unitPrice);
+        return { productId: product.id, quantity, unitPrice, specs: i.specs || null, subtotal: unitPrice * quantity };
+      }
+      const customName = (i.customName || "").trim();
+      const unitPrice = Number(i.unitPrice);
+      if (!customName || !Number.isFinite(unitPrice) || unitPrice <= 0) {
+        throw new Error("Custom items require a name and a valid price");
+      }
+      return { customName, quantity, unitPrice, specs: i.specs || null, subtotal: unitPrice * quantity };
     });
     totalAmount = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
     data.totalAmount = totalAmount;

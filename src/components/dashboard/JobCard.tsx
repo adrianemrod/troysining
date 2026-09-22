@@ -13,10 +13,8 @@ import type { DeadlineBucket } from "@/lib/deadlines";
 function itemsSummary(order: OrderWithRelations): { text: string; totalQty: number } {
   const totalQty = order.items.reduce((sum, i) => sum + i.quantity, 0);
   const first = order.items[0];
-  const text =
-    order.items.length <= 1
-      ? first?.product.name ?? "—"
-      : `${first.product.name} +${order.items.length - 1} more`;
+  const firstName = first?.product?.name ?? first?.customName ?? "—";
+  const text = order.items.length <= 1 ? firstName : `${firstName} +${order.items.length - 1} more`;
   return { text, totalQty };
 }
 

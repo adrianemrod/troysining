@@ -220,15 +220,16 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int
-  unitPrice Decimal  @db.Decimal(10, 2)
-  specs     String?
-  subtotal  Decimal  @db.Decimal(10, 2)
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  customName String?
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  specs      String?
+  subtotal   Decimal  @db.Decimal(10, 2)
 
   @@index([orderId])
 }

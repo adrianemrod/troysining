@@ -24,7 +24,10 @@ interface SalesOption {
 }
 
 interface ItemRow {
+  isCustom: boolean;
   productId: string;
+  customName: string;
+  customPrice: string;
   quantity: number;
   specs: string;
 }
@@ -69,13 +72,26 @@ export function OrderForm({
   const [downpayment, setDownpayment] = useState(initial?.downpayment?.toString() ?? "0");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [items, setItems] = useState<ItemRow[]>(
-    initial?.items ?? [{ productId: productOptions[0]?.id ?? "", quantity: 1, specs: "" }]
+    initial?.items ?? [
+      {
+        isCustom: productOptions.length === 0,
+        productId: productOptions[0]?.id ?? "",
+        customName: "",
+        customPrice: "",
+        quantity: 1,
+        specs: "",
+      },
+    ]
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const productMap = useMemo(() => new Map(productOptions.map((p) => [p.id, p])), [productOptions]);
   const total = items.reduce((sum, item) => {
+    if (item.isCustom) {
+      const price = Number(item.customPrice) || 0;
+      return sum + price * item.quantity;
+    }
     const product = productMap.get(item.productId);
     return sum + (product ? product.unitPrice * item.quantity : 0);
   }, 0);
@@ -84,10 +100,30 @@ export function OrderForm({
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   }
   function addItem() {
-    setItems((prev) => [...prev, { productId: productOptions[0]?.id ?? "", quantity: 1, specs: "" }]);
+    setItems((prev) => [
+      ...prev,
+      {
+        isCustom: productOptions.length === 0,
+        productId: productOptions[0]?.id ?? "",
+        customName: "",
+        customPrice: "",
+        quantity: 1,
+        specs: "",
+      },
+    ]);
   }
   function removeItem(index: number) {
     setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function buildItemsPayload() {
+    return items
+      .filter((i) => (i.isCustom ? i.customName.trim() && Number(i.customPrice) > 0 : i.productId))
+      .map((i) =>
+        i.isCustom
+          ? { customName: i.customName.trim(), unitPrice: Number(i.customPrice), quantity: i.quantity, specs: i.specs }
+          : { productId: i.productId, quantity: i.quantity, specs: i.specs }
+      );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -103,7 +139,7 @@ export function OrderForm({
             dueDate: new Date(dueDate).toISOString(),
             downpayment: Number(downpayment),
             notes,
-            items: items.filter((i) => i.productId),
+            items: buildItemsPayload(),
           }),
         })
       : await fetch("/api/orders", {
@@ -115,7 +151,7 @@ export function OrderForm({
             dueDate: new Date(dueDate).toISOString(),
             downpayment: Number(downpayment),
             notes,
-            items: items.filter((i) => i.productId),
+            items: buildItemsPayload(),
           }),
         });
 
@@ -176,34 +212,72 @@ export function OrderForm({
         <div className="space-y-3">
           {items.map((item, index) => {
             const product = productMap.get(item.productId);
-            const subtotal = product ? product.unitPrice * item.quantity : 0;
+            const subtotal = item.isCustom
+              ? (Number(item.customPrice) || 0) * item.quantity
+              : product
+                ? product.unitPrice * item.quantity
+                : 0;
             return (
-              <div key={index} className="grid grid-cols-12 items-start gap-2 rounded-lg border border-border p-3">
-                <div className="col-span-12 sm:col-span-5">
-                  <Select value={item.productId} onChange={(e) => updateItem(index, { productId: e.target.value })}>
-                    {productOptions.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} ({formatPHP(p.unitPrice)}/{p.unit})</option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="col-span-4 sm:col-span-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, { quantity: Math.max(1, Number(e.target.value)) })}
-                  />
-                </div>
-                <div className="col-span-8 sm:col-span-3">
-                  <Input placeholder="Specs (optional)" value={item.specs} onChange={(e) => updateItem(index, { specs: e.target.value })} />
-                </div>
-                <div className="col-span-10 sm:col-span-1 flex items-center text-sm font-medium text-foreground pt-2">
-                  {formatPHP(subtotal)}
-                </div>
-                <div className="col-span-2 sm:col-span-1 flex items-center justify-end pt-1">
-                  <button type="button" onClick={() => removeItem(index)} disabled={items.length === 1} className="text-muted hover:text-danger disabled:opacity-30">
-                    <Trash2 className="h-4 w-4" />
+              <div key={index} className="rounded-lg border border-border p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => updateItem(index, { isCustom: !item.isCustom })}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    {item.isCustom ? "Use catalog product instead" : "Enter custom item instead"}
                   </button>
+                </div>
+                {item.isCustom && (
+                  <div className="mb-2">
+                    <Input
+                      placeholder="Custom item name"
+                      value={item.customName}
+                      onChange={(e) => updateItem(index, { customName: e.target.value })}
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-12 items-start gap-2">
+                  {!item.isCustom && (
+                    <div className="col-span-12 sm:col-span-5">
+                      <Select value={item.productId} onChange={(e) => updateItem(index, { productId: e.target.value })}>
+                        {productOptions.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name} ({formatPHP(p.unitPrice)}/{p.unit})</option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
+                  <div className={item.isCustom ? "col-span-4 sm:col-span-3" : "col-span-4 sm:col-span-2"}>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, { quantity: Math.max(1, Number(e.target.value)) })}
+                    />
+                  </div>
+                  {item.isCustom && (
+                    <div className="col-span-8 sm:col-span-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Price (₱)"
+                        value={item.customPrice}
+                        onChange={(e) => updateItem(index, { customPrice: e.target.value })}
+                      />
+                    </div>
+                  )}
+                  <div className={item.isCustom ? "col-span-12 sm:col-span-4" : "col-span-8 sm:col-span-3"}>
+                    <Input placeholder="Specs (optional)" value={item.specs} onChange={(e) => updateItem(index, { specs: e.target.value })} />
+                  </div>
+                  <div className="col-span-10 sm:col-span-1 flex items-center text-sm font-medium text-foreground pt-2">
+                    {formatPHP(subtotal)}
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 flex items-center justify-end pt-1">
+                    <button type="button" onClick={() => removeItem(index)} disabled={items.length === 1} className="text-muted hover:text-danger disabled:opacity-30">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

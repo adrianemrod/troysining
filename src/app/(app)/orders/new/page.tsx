@@ -37,12 +37,6 @@ export default async function NewOrderPage({ searchParams }: { searchParams: Pro
           description="Add a client first so you can attach this order to them."
           action={<LinkButton href="/crm/new" size="sm">Add Client</LinkButton>}
         />
-      ) : products.length === 0 ? (
-        <EmptyState
-          title="No active products yet"
-          description="Add a product to the catalog before creating an order."
-          action={<LinkButton href="/products/new" size="sm">Add Product</LinkButton>}
-        />
       ) : (
         <Card className="p-6">
           <OrderForm

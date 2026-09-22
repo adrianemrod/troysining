@@ -113,7 +113,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <tbody>
                   {order.items.map((item) => (
                     <tr key={item.id} className="border-b border-border last:border-0">
-                      <td className="py-2.5 font-medium text-foreground">{item.product.name}</td>
+                      <td className="py-2.5 font-medium text-foreground">{item.product?.name ?? item.customName}</td>
                       <td className="py-2.5 text-muted">{item.specs || "—"}</td>
                       <td className="py-2.5 text-right">{item.quantity}</td>
                       <td className="py-2.5 text-right">{formatPHP(Number(item.unitPrice))}</td>

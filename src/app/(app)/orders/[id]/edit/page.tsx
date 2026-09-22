@@ -47,7 +47,14 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
             dueDate: order.dueDate.toISOString().slice(0, 16),
             downpayment: Number(order.downpayment),
             notes: order.notes ?? "",
-            items: order.items.map((i) => ({ productId: i.productId, quantity: i.quantity, specs: i.specs ?? "" })),
+            items: order.items.map((i) => ({
+              isCustom: !i.productId,
+              productId: i.productId ?? "",
+              customName: i.customName ?? "",
+              customPrice: i.productId ? "" : String(Number(i.unitPrice)),
+              quantity: i.quantity,
+              specs: i.specs ?? "",
+            })),
           }}
         />
       </Card>

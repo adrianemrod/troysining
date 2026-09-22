@@ -34,7 +34,7 @@ interface KanbanOrder {
   orderNumber: string;
   dueDate: string;
   client: { name: string; businessName: string | null };
-  items: { quantity: number; product: { name: string } }[];
+  items: { quantity: number; product: { name: string } | null; customName: string | null }[];
   productionJob: { id: string; stage: ProductionStage; assignedStaff: StaffOption | null } | null;
 }
 
@@ -47,7 +47,7 @@ function OrderCard({ order, dragging = false }: { order: KanbanOrder; dragging?:
   const atRisk = isAtRisk(order.dueDate, stage, false);
   const tone = atRisk ? "danger" : deadlineTone(manilaDayDiff(order.dueDate) < 0 ? "overdue" : manilaDayDiff(order.dueDate) === 0 ? "today" : manilaDayDiff(order.dueDate) <= 7 ? "this_week" : "later");
   const totalQty = order.items.reduce((s, i) => s + i.quantity, 0);
-  const productText = order.items[0]?.product.name ?? "—";
+  const productText = order.items[0]?.product?.name ?? order.items[0]?.customName ?? "—";
 
   return (
     <div

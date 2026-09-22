@@ -46,16 +46,20 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     }),
     prisma.orderItem.groupBy({
       by: ["productId"],
-      where: where.salespersonId ? { order: { salespersonId: where.salespersonId } } : undefined,
+      where: {
+        productId: { not: null },
+        ...(where.salespersonId ? { order: { salespersonId: where.salespersonId } } : {}),
+      },
       _sum: { quantity: true, subtotal: true },
       orderBy: { _sum: { subtotal: "desc" } },
       take: 5,
     }),
   ]);
 
+  const topItemProductIds = topItemsAgg.map((i) => i.productId).filter((id): id is string => id !== null);
   const [clientNames, productNames] = await Promise.all([
     prisma.client.findMany({ where: { id: { in: topClientsAgg.map((c) => c.clientId) } }, select: { id: true, name: true, businessName: true } }),
-    prisma.product.findMany({ where: { id: { in: topItemsAgg.map((i) => i.productId) } }, select: { id: true, name: true } }),
+    prisma.product.findMany({ where: { id: { in: topItemProductIds } }, select: { id: true, name: true } }),
   ]);
   const clientNameMap = new Map(clientNames.map((c) => [c.id, c.businessName || c.name]));
   const productNameMap = new Map(productNames.map((p) => [p.id, p.name]));
@@ -129,10 +133,10 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           ) : (
             <ol className="mt-3 space-y-2.5">
               {topItemsAgg.map((item, i) => (
-                <li key={item.productId} className="flex items-center justify-between text-sm">
+                <li key={item.productId ?? i} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">{i + 1}</span>
-                    {productNameMap.get(item.productId) ?? "Unknown"}
+                    {(item.productId && productNameMap.get(item.productId)) ?? "Unknown"}
                   </span>
                   <span className="font-medium">{item._sum.quantity} units</span>
                 </li>
