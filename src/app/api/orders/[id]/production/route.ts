@@ -89,10 +89,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
-  // Keep the order's lead stage roughly in sync with production progress.
-  if (stage === "READY_FOR_DELIVERY" && order.status !== "DELIVERED" && order.status !== "CLOSED") {
-    await prisma.order.update({ where: { id: order.id }, data: { status: "IN_PRODUCTION" } });
-  } else if (stage && order.status === "CONFIRMED") {
+  // Keep the order's lead stage in sync with production progress: any production
+  // update means work has started, so move it out of QUOTED/CONFIRMED into
+  // IN_PRODUCTION (unless it's already been delivered or closed out).
+  if (stage && !["DELIVERED", "CLOSED"].includes(order.status)) {
     await prisma.order.update({ where: { id: order.id }, data: { status: "IN_PRODUCTION" } });
   }
 

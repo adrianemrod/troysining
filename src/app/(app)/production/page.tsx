@@ -9,7 +9,10 @@ export default async function ProductionPage() {
   if (!session) return null;
 
   const orders = await prisma.order.findMany({
-    where: { status: { in: ["CONFIRMED", "IN_PRODUCTION"] } },
+    where: {
+      status: { notIn: ["DELIVERED", "CLOSED"] },
+      OR: [{ status: { in: ["CONFIRMED", "IN_PRODUCTION"] } }, { productionJob: { isNot: null } }],
+    },
     include: {
       client: true,
       items: { include: { product: true } },
