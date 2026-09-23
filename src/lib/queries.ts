@@ -26,9 +26,7 @@ export async function getRoleVisibleOrders(session: SessionPayload): Promise<Ord
     status: { notIn: ["DELIVERED", "CLOSED"] },
   };
 
-  if (session.role === "SALES") {
-    where.salespersonId = session.userId;
-  } else if (session.role === "PRODUCTION") {
+  if (session.role === "PRODUCTION") {
     where.productionJob = { isNot: null };
   } else if (session.role === "DELIVERY") {
     where.OR = [
@@ -36,7 +34,7 @@ export async function getRoleVisibleOrders(session: SessionPayload): Promise<Ord
       { productionJob: { stage: "READY_FOR_DELIVERY" } },
     ];
   }
-  // ADMIN and ENCODER see everything in the active pipeline.
+  // ADMIN, SALES, and ENCODER see everything in the active pipeline.
 
   return prisma.order.findMany({
     where,

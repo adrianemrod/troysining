@@ -36,13 +36,11 @@ export default async function DashboardPage() {
     (b) => b.order.productionJob && ["DESIGNING", "PRINTING", "FINISHING", "QUALITY_CHECK"].includes(b.order.productionJob.stage)
   );
 
-  const showReadyForDelivery = session.role === "ADMIN" || session.role === "DELIVERY";
+  const showReadyForDelivery = ["ADMIN", "SALES", "DELIVERY"].includes(session.role);
   const readyForDelivery = bucketed.filter((b) => b.order.productionJob?.stage === "READY_FOR_DELIVERY");
 
   const scopeLabel =
-    session.role === "SALES"
-      ? "your clients"
-      : session.role === "PRODUCTION"
+    session.role === "PRODUCTION"
       ? "your production queue"
       : session.role === "DELIVERY"
       ? "deliveries"
