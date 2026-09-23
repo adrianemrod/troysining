@@ -1,10 +1,11 @@
-import { mkdir, writeFile, unlink } from "fs/promises";
+import { mkdir, writeFile, unlink, readFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { isDriveEnabled, uploadToDrive, downloadFromDrive, trashDriveFile } from "@/lib/googleDrive";
 
-// Local filesystem storage abstraction, organized per client.
-// Swap this module's internals for an S3-compatible client later;
-// callers only depend on save()/remove()/urlFor().
+// Storage abstraction for uploaded files: Google Drive when configured
+// (GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_DRIVE_FOLDER_ID), otherwise local
+// disk. Callers only depend on saveFile()/removeFile()/readStoredFile().
 
 // Overridable so a host with a persistent volume (e.g. Railway) can mount it
 // somewhere other than the app's working directory.
@@ -18,15 +19,24 @@ export async function saveFile(opts: {
   clientId: string;
   originalName: string;
   buffer: Buffer;
+  mimeType?: string;
 }): Promise<{ storedName: string; relativePath: string; url: string }> {
-  const clientDir = path.join(STORAGE_ROOT, sanitizeSegment(opts.clientId));
-  await mkdir(clientDir, { recursive: true });
-
   const ext = path.extname(opts.originalName);
   const base = sanitizeSegment(path.basename(opts.originalName, ext));
   const storedName = `${Date.now()}-${randomUUID().slice(0, 8)}-${base}${ext}`;
-  const fullPath = path.join(clientDir, storedName);
 
+  if (isDriveEnabled()) {
+    const { fileId } = await uploadToDrive({
+      filename: opts.originalName,
+      mimeType: opts.mimeType || "application/octet-stream",
+      buffer: opts.buffer,
+    });
+    return { storedName, relativePath: fileId, url: `/api/files/serve/${fileId}` };
+  }
+
+  const clientDir = path.join(STORAGE_ROOT, sanitizeSegment(opts.clientId));
+  await mkdir(clientDir, { recursive: true });
+  const fullPath = path.join(clientDir, storedName);
   await writeFile(fullPath, opts.buffer);
 
   const relativePath = `${sanitizeSegment(opts.clientId)}/${storedName}`;
@@ -38,6 +48,10 @@ export async function saveFile(opts: {
 }
 
 export async function removeFile(relativePath: string): Promise<void> {
+  if (isDriveEnabled()) {
+    await trashDriveFile(relativePath);
+    return;
+  }
   const fullPath = path.join(STORAGE_ROOT, relativePath);
   try {
     await unlink(fullPath);
@@ -46,6 +60,11 @@ export async function removeFile(relativePath: string): Promise<void> {
   }
 }
 
-export function absolutePathFor(relativePath: string): string {
-  return path.join(STORAGE_ROOT, relativePath);
+export async function readStoredFile(relativePath: string): Promise<{ buffer: Buffer; mimeType: string | null }> {
+  if (isDriveEnabled()) {
+    return downloadFromDrive(relativePath);
+  }
+  const fullPath = path.join(STORAGE_ROOT, relativePath);
+  const buffer = await readFile(fullPath);
+  return { buffer, mimeType: null };
 }

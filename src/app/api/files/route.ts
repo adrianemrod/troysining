@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const saved = await saveFile({ clientId, originalName: file.name, buffer });
+  const saved = await saveFile({ clientId, originalName: file.name, buffer, mimeType: file.type });
 
   const record = await prisma.file.create({
     data: {

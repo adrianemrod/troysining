@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let proofUrl: string | undefined;
   if (proofFile) {
     const buffer = Buffer.from(await proofFile.arrayBuffer());
-    const saved = await saveFile({ clientId: order.clientId, originalName: proofFile.name, buffer });
+    const saved = await saveFile({ clientId: order.clientId, originalName: proofFile.name, buffer, mimeType: proofFile.type });
     proofUrl = saved.url;
   }
 

@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let photoUrl: string | undefined;
   if (photoFile) {
     const buffer = Buffer.from(await photoFile.arrayBuffer());
-    const saved = await saveFile({ clientId: order.clientId, originalName: photoFile.name, buffer });
+    const saved = await saveFile({ clientId: order.clientId, originalName: photoFile.name, buffer, mimeType: photoFile.type });
     photoUrl = saved.url;
     await prisma.file.create({
       data: {

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
 import path from "path";
 import { getSession } from "@/lib/auth";
-import { absolutePathFor } from "@/lib/storage";
+import { readStoredFile } from "@/lib/storage";
 
 const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",
@@ -57,10 +56,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pat
   }
 
   try {
-    const fullPath = absolutePathFor(relativePath);
-    const buffer = await readFile(fullPath);
-    const ext = path.extname(fullPath).toLowerCase();
-    const contentType = MIME_BY_EXT[ext] ?? "application/octet-stream";
+    const { buffer, mimeType } = await readStoredFile(relativePath);
+    const ext = path.extname(relativePath).toLowerCase();
+    const contentType = mimeType ?? MIME_BY_EXT[ext] ?? "application/octet-stream";
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": contentType,
