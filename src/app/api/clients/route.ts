@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   await logActivity({ userId: session.userId, action: "CLIENT_CREATED", entityType: "Client", entityId: client.id, details: client.name });
 
-  if (isDriveEnabled()) {
+  if (await isDriveEnabled()) {
     try {
       const folderId = await createClientFolder(client.businessName || client.name);
       await prisma.client.update({ where: { id: client.id }, data: { driveFolderId: folderId } });

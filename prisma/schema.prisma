@@ -366,3 +366,20 @@ model Expense {
   @@index([date])
   @@index([category])
 }
+
+// ---------------------------------------------------------------------------
+// Integrations
+// ---------------------------------------------------------------------------
+
+// Singleton row (id is always "default"): the OAuth connection to the
+// business's own Google Drive account, used instead of a service account
+// because personal (non-Workspace) Google accounts don't support the
+// shared-drive / domain-delegation storage that service accounts need.
+model GoogleDriveConnection {
+  id             String   @id @default("default")
+  refreshToken   String
+  connectedEmail String?
+  rootFolderId   String?
+  connectedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

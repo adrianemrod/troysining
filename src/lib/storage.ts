@@ -4,9 +4,9 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { isDriveEnabled, uploadToDrive, downloadFromDrive, trashDriveFile, createClientFolder } from "@/lib/googleDrive";
 
-// Storage abstraction for uploaded files: Google Drive when configured
-// (GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_DRIVE_FOLDER_ID), otherwise local
-// disk. Callers only depend on saveFile()/removeFile()/readStoredFile().
+// Storage abstraction for uploaded files: Google Drive when a connection has
+// been made at /admin/integrations, otherwise local disk. Callers only
+// depend on saveFile()/removeFile()/readStoredFile().
 
 // Overridable so a host with a persistent volume (e.g. Railway) can mount it
 // somewhere other than the app's working directory.
@@ -39,7 +39,7 @@ export async function saveFile(opts: {
   const base = sanitizeSegment(path.basename(opts.originalName, ext));
   const storedName = `${Date.now()}-${randomUUID().slice(0, 8)}-${base}${ext}`;
 
-  if (isDriveEnabled()) {
+  if (await isDriveEnabled()) {
     const folderId = await getOrCreateClientFolderId(opts.clientId);
     const { fileId } = await uploadToDrive({
       filename: opts.originalName,
@@ -64,7 +64,7 @@ export async function saveFile(opts: {
 }
 
 export async function removeFile(relativePath: string): Promise<void> {
-  if (isDriveEnabled()) {
+  if (await isDriveEnabled()) {
     await trashDriveFile(relativePath);
     return;
   }
@@ -77,7 +77,7 @@ export async function removeFile(relativePath: string): Promise<void> {
 }
 
 export async function readStoredFile(relativePath: string): Promise<{ buffer: Buffer; mimeType: string | null }> {
-  if (isDriveEnabled()) {
+  if (await isDriveEnabled()) {
     return downloadFromDrive(relativePath);
   }
   const fullPath = path.join(STORAGE_ROOT, relativePath);

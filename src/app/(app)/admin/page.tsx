@@ -1,4 +1,4 @@
-import { Users, History, ShieldCheck } from "lucide-react";
+import { Users, History, ShieldCheck, HardDrive } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
@@ -45,6 +45,15 @@ export default async function AdminOverviewPage() {
           <p className="mt-1.5 text-sm text-muted">See who did what, and when, across the system.</p>
           <LinkButton href="/admin/activity" variant="outline" size="sm" className="mt-3">
             View Activity Log
+          </LinkButton>
+        </Card>
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <HardDrive className="h-4 w-4 text-primary" /> Integrations
+          </h2>
+          <p className="mt-1.5 text-sm text-muted">Connect Google Drive for file storage.</p>
+          <LinkButton href="/admin/integrations" variant="outline" size="sm" className="mt-3">
+            Manage Integrations
           </LinkButton>
         </Card>
       </div>
