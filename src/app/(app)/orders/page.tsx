@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatTile } from "@/components/dashboard/StatTile";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
-import { LEAD_STAGE_META } from "@/lib/status";
+import { LEAD_STAGE_META, VAT_TYPE_META } from "@/lib/status";
 import { currentManilaMonth, monthRangeManila, monthLabelManila } from "@/lib/analytics";
 import type { Prisma } from "@prisma/client";
 
@@ -189,7 +189,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     <td className="px-4 py-3 text-muted">{order.client.businessName || order.client.name}</td>
                     <td className="px-4 py-3 text-muted">{formatManilaDate(order.dueDate)}</td>
                     <td className="px-4 py-3">
-                      <Badge tone={LEAD_STAGE_META[order.status].tone}>{LEAD_STAGE_META[order.status].label}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge tone={LEAD_STAGE_META[order.status].tone}>{LEAD_STAGE_META[order.status].label}</Badge>
+                        {order.vatType === "VAT" && (
+                          <Badge tone={VAT_TYPE_META.VAT.tone}>{VAT_TYPE_META.VAT.label}</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right font-medium">{formatPHP(Number(order.totalAmount))}</td>
                     <td className="px-4 py-3">

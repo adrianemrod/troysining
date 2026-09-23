@@ -47,6 +47,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
             dueDate: order.dueDate.toISOString().slice(0, 16),
             downpayment: Number(order.downpayment),
             notes: order.notes ?? "",
+            vatType: order.vatType,
             items: order.items.map((i) => ({
               isCustom: !i.productId,
               productId: i.productId ?? "",

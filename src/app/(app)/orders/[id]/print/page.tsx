@@ -15,6 +15,8 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
   if (!order) notFound();
 
   const totalAmount = Number(order.totalAmount);
+  const vatAmount = Number(order.vatAmount);
+  const subtotal = totalAmount - vatAmount;
   const downpayment = Number(order.downpayment);
   const balance = totalAmount - downpayment;
 
@@ -81,6 +83,10 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
 
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-1.5 text-sm">
+            <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="font-medium">{formatPHP(subtotal)}</span></div>
+            {order.vatType === "VAT" && (
+              <div className="flex justify-between"><span className="text-muted">VAT (12%)</span><span className="font-medium">{formatPHP(vatAmount)}</span></div>
+            )}
             <div className="flex justify-between"><span className="text-muted">Total</span><span className="font-medium">{formatPHP(totalAmount)}</span></div>
             <div className="flex justify-between"><span className="text-muted">Downpayment</span><span className="font-medium">{formatPHP(downpayment)}</span></div>
             <div className="flex justify-between border-t border-primary pt-1.5 text-base"><span className="font-bold">Balance Due</span><span className="font-bold text-primary">{formatPHP(balance)}</span></div>

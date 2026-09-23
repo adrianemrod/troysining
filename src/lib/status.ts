@@ -1,4 +1,4 @@
-import type { LeadStage, ProductionStage, DeliveryStatus, ClientType, Role } from "@prisma/client";
+import type { LeadStage, ProductionStage, DeliveryStatus, ClientType, Role, VatType } from "@prisma/client";
 
 export type Tone = "neutral" | "info" | "warning" | "danger" | "success" | "accent";
 
@@ -45,6 +45,11 @@ export const DELIVERY_STATUS_META: Record<DeliveryStatus, StatusMeta> = {
 export const CLIENT_TYPE_META: Record<ClientType, StatusMeta> = {
   ONE_TIME: { label: "One-time", tone: "neutral" },
   REPEAT: { label: "Repeat Customer", tone: "success" },
+};
+
+export const VAT_TYPE_META: Record<VatType, StatusMeta> = {
+  VAT: { label: "VAT (12%)", tone: "info" },
+  NON_VAT: { label: "Non-VAT", tone: "neutral" },
 };
 
 export const ROLE_META: Record<Role, StatusMeta> = {

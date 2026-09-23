@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { computeOrderTotals } from "@/lib/vat";
+import type { VatType } from "@prisma/client";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -48,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   type IncomingItem = { productId?: string; customName?: string; unitPrice?: number; quantity: number; specs?: string };
 
-  let totalAmount: number | undefined;
+  let subtotal: number | undefined;
   if (Array.isArray(body.items) && body.items.length > 0) {
     const incomingItems = body.items as IncomingItem[];
     const productIds = incomingItems.filter((i) => i.productId).map((i) => i.productId as string);
@@ -70,14 +72,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
       return { customName, quantity, unitPrice, specs: i.specs || null, subtotal: unitPrice * quantity };
     });
-    totalAmount = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
-    data.totalAmount = totalAmount;
+    subtotal = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
 
     await prisma.$transaction([
       prisma.orderItem.deleteMany({ where: { orderId: id } }),
       prisma.orderItem.createMany({ data: items.map((i: typeof items[number]) => ({ ...i, orderId: id })) }),
     ]);
   }
+
+  const vatType: VatType | undefined = body.vatType === "VAT" || body.vatType === "NON_VAT" ? body.vatType : undefined;
+  let totalAmount: number | undefined;
+  if (subtotal !== undefined || (vatType && vatType !== existing.vatType)) {
+    if (subtotal === undefined) {
+      const agg = await prisma.orderItem.aggregate({ where: { orderId: id }, _sum: { subtotal: true } });
+      subtotal = Number(agg._sum.subtotal ?? 0);
+    }
+    const { vatAmount, totalAmount: computedTotal } = computeOrderTotals(subtotal, vatType ?? existing.vatType);
+    totalAmount = computedTotal;
+    data.vatAmount = vatAmount;
+    data.totalAmount = totalAmount;
+  }
+  if (vatType) data.vatType = vatType;
 
   const referenceTotal = totalAmount ?? Number(existing.totalAmount);
   if (typeof body.downpayment === "number") {

@@ -38,8 +38,11 @@ interface OrderInitial {
   dueDate: string;
   downpayment: number;
   notes: string;
+  vatType: "VAT" | "NON_VAT";
   items: ItemRow[];
 }
+
+const VAT_RATE = 0.12;
 
 function defaultDueDate(): string {
   const d = new Date();
@@ -71,6 +74,7 @@ export function OrderForm({
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? defaultDueDate());
   const [downpayment, setDownpayment] = useState(initial?.downpayment?.toString() ?? "0");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [vatType, setVatType] = useState<"VAT" | "NON_VAT">(initial?.vatType ?? "NON_VAT");
   const [items, setItems] = useState<ItemRow[]>(
     initial?.items ?? [
       {
@@ -87,7 +91,7 @@ export function OrderForm({
   const [error, setError] = useState<string | null>(null);
 
   const productMap = useMemo(() => new Map(productOptions.map((p) => [p.id, p])), [productOptions]);
-  const total = items.reduce((sum, item) => {
+  const subtotal = items.reduce((sum, item) => {
     if (item.isCustom) {
       const price = Number(item.customPrice) || 0;
       return sum + price * item.quantity;
@@ -95,6 +99,8 @@ export function OrderForm({
     const product = productMap.get(item.productId);
     return sum + (product ? product.unitPrice * item.quantity : 0);
   }, 0);
+  const vatAmount = vatType === "VAT" ? subtotal * VAT_RATE : 0;
+  const total = subtotal + vatAmount;
 
   function updateItem(index: number, patch: Partial<ItemRow>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
@@ -139,6 +145,7 @@ export function OrderForm({
             dueDate: new Date(dueDate).toISOString(),
             downpayment: Number(downpayment),
             notes,
+            vatType,
             items: buildItemsPayload(),
           }),
         })
@@ -151,6 +158,7 @@ export function OrderForm({
             dueDate: new Date(dueDate).toISOString(),
             downpayment: Number(downpayment),
             notes,
+            vatType,
             items: buildItemsPayload(),
           }),
         });
@@ -199,6 +207,13 @@ export function OrderForm({
         <FieldGroup>
           <Label htmlFor="downpayment">Downpayment (₱)</Label>
           <Input id="downpayment" type="number" min="0" step="0.01" value={downpayment} onChange={(e) => setDownpayment(e.target.value)} />
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="vatType">VAT</Label>
+          <Select id="vatType" value={vatType} onChange={(e) => setVatType(e.target.value as "VAT" | "NON_VAT")}>
+            <option value="NON_VAT">Non-VAT</option>
+            <option value="VAT">VAT (+12%)</option>
+          </Select>
         </FieldGroup>
       </div>
 
@@ -290,9 +305,21 @@ export function OrderForm({
         <Textarea id="notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Special instructions, references, etc." />
       </FieldGroup>
 
-      <div className="flex items-center justify-between rounded-lg bg-primary-soft px-4 py-3">
-        <span className="text-sm font-medium text-primary">Order Total</span>
-        <span className="text-lg font-bold text-primary">{formatPHP(total)}</span>
+      <div className="space-y-1.5 rounded-lg bg-primary-soft px-4 py-3">
+        <div className="flex items-center justify-between text-sm text-primary/80">
+          <span>Subtotal</span>
+          <span>{formatPHP(subtotal)}</span>
+        </div>
+        {vatType === "VAT" && (
+          <div className="flex items-center justify-between text-sm text-primary/80">
+            <span>VAT (12%)</span>
+            <span>{formatPHP(vatAmount)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between border-t border-primary/20 pt-1.5">
+          <span className="text-sm font-medium text-primary">Order Total</span>
+          <span className="text-lg font-bold text-primary">{formatPHP(total)}</span>
+        </div>
       </div>
 
       <Button type="submit" disabled={loading || (!isEdit && !clientId)}>

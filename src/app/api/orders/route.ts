@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { computeOrderTotals } from "@/lib/vat";
 
 async function nextOrderNumber(): Promise<string> {
   const last = await prisma.order.findFirst({ orderBy: { createdAt: "desc" }, select: { orderNumber: true } });
@@ -60,7 +61,9 @@ export async function POST(req: NextRequest) {
     return { customName, quantity, unitPrice, specs: i.specs || null, subtotal: unitPrice * quantity };
   });
 
-  const totalAmount = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
+  const subtotal = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
+  const vatType = body.vatType === "VAT" ? "VAT" : "NON_VAT";
+  const { vatAmount, totalAmount } = computeOrderTotals(subtotal, vatType);
   const downpayment = Math.min(Number(body.downpayment) || 0, totalAmount);
   const orderNumber = await nextOrderNumber();
 
@@ -71,6 +74,8 @@ export async function POST(req: NextRequest) {
       salespersonId: body.salespersonId || session.userId,
       status: "QUOTED",
       dueDate: new Date(body.dueDate),
+      vatType,
+      vatAmount,
       totalAmount,
       downpayment,
       notes: body.notes || null,

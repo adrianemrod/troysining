@@ -10,7 +10,7 @@ import { LinkButton } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
 import { daysLabel, bucketForDueDate } from "@/lib/deadlines";
-import { LEAD_STAGE_META, deadlineTone } from "@/lib/status";
+import { LEAD_STAGE_META, VAT_TYPE_META, deadlineTone } from "@/lib/status";
 import { ProductionPanel } from "@/components/orders/ProductionPanel";
 import { DeliveryPanel } from "@/components/orders/DeliveryPanel";
 
@@ -46,6 +46,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   ]);
 
   const totalAmount = Number(order.totalAmount);
+  const vatAmount = Number(order.vatAmount);
+  const subtotal = totalAmount - vatAmount;
   const downpayment = Number(order.downpayment);
   const balance = totalAmount - downpayment;
   const bucket = bucketForDueDate(order.dueDate);
@@ -65,6 +67,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-foreground">{order.orderNumber}</h1>
               <Badge tone={LEAD_STAGE_META[order.status].tone}>{LEAD_STAGE_META[order.status].label}</Badge>
+              <Badge tone={VAT_TYPE_META[order.vatType].tone}>{VAT_TYPE_META[order.vatType].label}</Badge>
             </div>
             <p className="mt-1 text-sm text-muted">
               {order.client.businessName || order.client.name} &middot; Created {formatManilaDate(order.createdAt)}
@@ -177,7 +180,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-foreground">Payment</h2>
             <div className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted">Total</span><span className="font-medium">{formatPHP(totalAmount)}</span></div>
+              <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="font-medium">{formatPHP(subtotal)}</span></div>
+              {order.vatType === "VAT" && (
+                <div className="flex justify-between"><span className="text-muted">VAT (12%)</span><span className="font-medium">{formatPHP(vatAmount)}</span></div>
+              )}
+              <div className="flex justify-between border-t border-border pt-2"><span className="text-muted">Total</span><span className="font-medium">{formatPHP(totalAmount)}</span></div>
               <div className="flex justify-between"><span className="text-muted">Downpayment</span><span className="font-medium text-success">{formatPHP(downpayment)}</span></div>
               <div className="flex justify-between border-t border-border pt-2"><span className="text-muted">Balance</span><span className="font-bold text-foreground">{formatPHP(balance)}</span></div>
             </div>

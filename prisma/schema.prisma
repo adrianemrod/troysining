@@ -24,6 +24,11 @@ enum ClientType {
   REPEAT
 }
 
+enum VatType {
+  VAT
+  NON_VAT
+}
+
 enum LeadStage {
   NEW_INQUIRY
   QUOTED
@@ -202,6 +207,8 @@ model Order {
   salesperson    User      @relation("OrderSalesperson", fields: [salespersonId], references: [id])
   status         LeadStage @default(QUOTED)
   dueDate        DateTime
+  vatType        VatType   @default(NON_VAT)
+  vatAmount      Decimal   @default(0) @db.Decimal(10, 2)
   totalAmount    Decimal   @db.Decimal(10, 2)
   downpayment    Decimal   @default(0) @db.Decimal(10, 2)
   notes          String?
