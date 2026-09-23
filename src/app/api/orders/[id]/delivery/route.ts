@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { saveFile } from "@/lib/storage";
+import { describeDriveError } from "@/lib/googleDrive";
 import { DeliveryMethod, DeliveryStatus } from "@prisma/client";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -45,7 +46,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let proofUrl: string | undefined;
   if (proofFile) {
     const buffer = Buffer.from(await proofFile.arrayBuffer());
-    const saved = await saveFile({ clientId: order.clientId, originalName: proofFile.name, buffer, mimeType: proofFile.type });
+    let saved;
+    try {
+      saved = await saveFile({ clientId: order.clientId, originalName: proofFile.name, buffer, mimeType: proofFile.type });
+    } catch (err) {
+      console.error("Delivery proof upload failed:", err);
+      return NextResponse.json({ error: `Could not save proof photo: ${describeDriveError(err)}` }, { status: 502 });
+    }
     proofUrl = saved.url;
   }
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { Prisma } from "@prisma/client";
+import { isDriveEnabled, createClientFolder } from "@/lib/googleDrive";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -63,6 +64,15 @@ export async function POST(req: NextRequest) {
   });
 
   await logActivity({ userId: session.userId, action: "CLIENT_CREATED", entityType: "Client", entityId: client.id, details: client.name });
+
+  if (isDriveEnabled()) {
+    try {
+      const folderId = await createClientFolder(client.businessName || client.name);
+      await prisma.client.update({ where: { id: client.id }, data: { driveFolderId: folderId } });
+    } catch {
+      // Non-fatal: storage.ts creates the folder lazily on first upload if this failed.
+    }
+  }
 
   return NextResponse.json({ client }, { status: 201 });
 }

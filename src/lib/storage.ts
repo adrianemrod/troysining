@@ -1,7 +1,8 @@
 import { mkdir, writeFile, unlink, readFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
-import { isDriveEnabled, uploadToDrive, downloadFromDrive, trashDriveFile } from "@/lib/googleDrive";
+import { prisma } from "@/lib/prisma";
+import { isDriveEnabled, uploadToDrive, downloadFromDrive, trashDriveFile, createClientFolder } from "@/lib/googleDrive";
 
 // Storage abstraction for uploaded files: Google Drive when configured
 // (GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_DRIVE_FOLDER_ID), otherwise local
@@ -15,6 +16,19 @@ function sanitizeSegment(segment: string): string {
   return segment.replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 80);
 }
 
+// Each client gets its own Drive subfolder. Clients created before Drive was
+// configured (or whose folder creation failed at creation time) get one
+// lazily here, on first upload.
+async function getOrCreateClientFolderId(clientId: string): Promise<string> {
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { driveFolderId: true, name: true, businessName: true } });
+  if (client?.driveFolderId) return client.driveFolderId;
+
+  const label = client?.businessName || client?.name || clientId;
+  const folderId = await createClientFolder(label);
+  await prisma.client.update({ where: { id: clientId }, data: { driveFolderId: folderId } }).catch(() => {});
+  return folderId;
+}
+
 export async function saveFile(opts: {
   clientId: string;
   originalName: string;
@@ -26,10 +40,12 @@ export async function saveFile(opts: {
   const storedName = `${Date.now()}-${randomUUID().slice(0, 8)}-${base}${ext}`;
 
   if (isDriveEnabled()) {
+    const folderId = await getOrCreateClientFolderId(opts.clientId);
     const { fileId } = await uploadToDrive({
       filename: opts.originalName,
       mimeType: opts.mimeType || "application/octet-stream",
       buffer: opts.buffer,
+      folderId,
     });
     return { storedName, relativePath: fileId, url: `/api/files/serve/${fileId}` };
   }

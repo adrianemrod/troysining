@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { saveFile } from "@/lib/storage";
+import { describeDriveError } from "@/lib/googleDrive";
 import { isAtRisk } from "@/lib/deadlines";
 import { ProductionStage } from "@prisma/client";
 
@@ -42,7 +43,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let photoUrl: string | undefined;
   if (photoFile) {
     const buffer = Buffer.from(await photoFile.arrayBuffer());
-    const saved = await saveFile({ clientId: order.clientId, originalName: photoFile.name, buffer, mimeType: photoFile.type });
+    let saved;
+    try {
+      saved = await saveFile({ clientId: order.clientId, originalName: photoFile.name, buffer, mimeType: photoFile.type });
+    } catch (err) {
+      console.error("Production photo upload failed:", err);
+      return NextResponse.json({ error: `Could not save photo: ${describeDriveError(err)}` }, { status: 502 });
+    }
     photoUrl = saved.url;
     await prisma.file.create({
       data: {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { saveFile } from "@/lib/storage";
 import { logActivity } from "@/lib/activity";
+import { describeDriveError } from "@/lib/googleDrive";
 import type { FileCategory } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -33,7 +34,13 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const saved = await saveFile({ clientId, originalName: file.name, buffer, mimeType: file.type });
+  let saved;
+  try {
+    saved = await saveFile({ clientId, originalName: file.name, buffer, mimeType: file.type });
+  } catch (err) {
+    console.error("File upload failed:", err);
+    return NextResponse.json({ error: `Could not save file: ${describeDriveError(err)}` }, { status: 502 });
+  }
 
   const record = await prisma.file.create({
     data: {

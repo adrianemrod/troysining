@@ -148,6 +148,7 @@ model Client {
   leadStage    LeadStage  @default(NEW_INQUIRY)
   salesOwnerId String?
   salesOwner   User?      @relation("ClientSalesOwner", fields: [salesOwnerId], references: [id])
+  driveFolderId String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
