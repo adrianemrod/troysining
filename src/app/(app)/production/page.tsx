@@ -28,7 +28,9 @@ export default async function ProductionPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Production Tracker</h1>
         <p className="mt-1 text-sm text-muted">
-          Drag a job card across stages as work progresses. Every card shows time left until deadline.
+          {canManage
+            ? "Drag a job card across stages as work progresses. Every card shows time left until deadline."
+            : "See where every job stands. Every card shows time left until deadline."}
         </p>
       </div>
       <KanbanBoard initialOrders={JSON.parse(JSON.stringify(orders))} canManage={canManage} />

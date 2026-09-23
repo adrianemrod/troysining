@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
   }
   if (stage) where.leadStage = stage as Prisma.ClientWhereInput["leadStage"];
   if (type) where.clientType = type as Prisma.ClientWhereInput["clientType"];
-  if (session.role === "SALES") where.salesOwnerId = session.userId;
 
   const clients = await prisma.client.findMany({
     where,

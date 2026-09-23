@@ -38,7 +38,6 @@ export default async function CrmPage({ searchParams }: { searchParams: Promise<
     ];
   }
   if (stage && stage !== "ALL") where.leadStage = stage as LeadStage;
-  if (session.role === "SALES") where.salesOwnerId = session.userId;
 
   const clients = await prisma.client.findMany({
     where,
