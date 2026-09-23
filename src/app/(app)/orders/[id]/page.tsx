@@ -52,7 +52,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const balance = totalAmount - downpayment;
   const bucket = bucketForDueDate(order.dueDate);
 
-  const canManageProduction = ["ADMIN", "PRODUCTION"].includes(session.role);
+  const canManageProduction = ["ADMIN", "SALES", "PRODUCTION"].includes(session.role);
   const canManageDelivery = ["ADMIN", "DELIVERY"].includes(session.role);
   const canEditOrder = session.role === "ADMIN" || (session.role === "SALES" && order.salespersonId === session.userId);
 
