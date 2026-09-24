@@ -14,9 +14,8 @@ export default async function NewOrderPage({ searchParams }: { searchParams: Pro
 
   const { client } = await searchParams;
 
-  const clientWhere = session.role === "SALES" ? { salesOwnerId: session.userId } : {};
   const [clients, products, salespeople] = await Promise.all([
-    prisma.client.findMany({ where: clientWhere, select: { id: true, name: true, businessName: true }, orderBy: { name: "asc" } }),
+    prisma.client.findMany({ select: { id: true, name: true, businessName: true }, orderBy: { name: "asc" } }),
     prisma.product.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { role: "SALES", isActive: true }, select: { id: true, name: true } }),
   ]);
