@@ -25,10 +25,23 @@ export default async function FilesPage({ searchParams }: { searchParams: Promis
       }
     : {};
 
-  const clients = await prisma.client.findMany({
-    where,
-    include: { _count: { select: { files: true } } },
-    orderBy: { name: "asc" },
+  const [clients, latestFilePerClient] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      include: { _count: { select: { files: true } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.file.groupBy({ by: ["clientId"], _max: { createdAt: true } }),
+  ]);
+
+  const latestFileAtByClientId = new Map(latestFilePerClient.map((f) => [f.clientId, f._max.createdAt]));
+  clients.sort((a, b) => {
+    const aLatest = latestFileAtByClientId.get(a.id);
+    const bLatest = latestFileAtByClientId.get(b.id);
+    if (aLatest && bLatest) return bLatest.getTime() - aLatest.getTime();
+    if (aLatest) return -1;
+    if (bLatest) return 1;
+    return a.name.localeCompare(b.name);
   });
 
   const activeClientId = selectedClientId ?? clients.find((c) => c._count.files > 0)?.id;
