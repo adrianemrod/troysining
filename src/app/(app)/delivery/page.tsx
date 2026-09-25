@@ -93,7 +93,7 @@ export default async function DeliveryPage() {
                         <p className="truncate text-sm font-semibold text-foreground">{order.client.businessName || order.client.name}</p>
                         {order.delivery && <Badge tone={DELIVERY_STATUS_META[order.delivery.status].tone}>{DELIVERY_STATUS_META[order.delivery.status].label}</Badge>}
                       </div>
-                      <p className="mt-1 text-xs text-muted">{order.orderNumber} &middot; Due {formatManilaDate(order.dueDate)} &middot; {daysLabel(order.dueDate)}</p>
+                      <p className="mt-1 text-xs text-muted">{order.orderNumber} &middot; Due {formatManilaDate(order.dueDate)} &middot; {daysLabel(order.dueDate, order.delivery?.status === "DELIVERED")}</p>
                       {order.delivery?.method && <p className="mt-2 text-xs text-muted">{METHOD_LABELS[order.delivery.method]}</p>}
                       {(order.delivery?.address || order.client.address) && (
                         <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">

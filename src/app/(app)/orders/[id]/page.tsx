@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { LinkButton } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { formatManilaDate, formatPHP } from "@/lib/utils";
-import { daysLabel, bucketForDueDate } from "@/lib/deadlines";
+import { daysLabel, bucketForDueDate, isProductionDone } from "@/lib/deadlines";
 import { LEAD_STAGE_META, VAT_TYPE_META, deadlineTone } from "@/lib/status";
 import { ProductionPanel } from "@/components/orders/ProductionPanel";
 import { DeliveryPanel } from "@/components/orders/DeliveryPanel";
@@ -50,7 +50,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const subtotal = totalAmount - vatAmount;
   const downpayment = Number(order.downpayment);
   const balance = totalAmount - downpayment;
-  const bucket = bucketForDueDate(order.dueDate);
+  const isDone = isProductionDone(order.productionJob?.stage) || ["DELIVERED", "CLOSED"].includes(order.status);
+  const bucket = bucketForDueDate(order.dueDate, isDone);
 
   const canManageProduction = ["ADMIN", "SALES", "PRODUCTION"].includes(session.role);
   const canManageDelivery = ["ADMIN", "DELIVERY"].includes(session.role);
@@ -75,7 +76,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
           <div className="flex items-center gap-2">
             <Badge tone={deadlineTone(bucket)} dot className="px-3 py-1.5 text-sm">
-              Due {formatManilaDate(order.dueDate)} &middot; {daysLabel(order.dueDate)}
+              Due {formatManilaDate(order.dueDate)} &middot; {daysLabel(order.dueDate, isDone)}
             </Badge>
             <LinkButton href={`/orders/${order.id}/print`} variant="outline" size="md">
               <Printer className="h-4 w-4" /> Quotation

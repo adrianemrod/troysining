@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
-import { daysLabel, manilaDayDiff, isAtRisk } from "@/lib/deadlines";
+import { daysLabel, bucketForDueDate, isAtRisk, isProductionDone } from "@/lib/deadlines";
 import { PRODUCTION_STAGE_ORDER, PRODUCTION_STAGE_META, deadlineTone } from "@/lib/status";
 import type { ProductionStage } from "@prisma/client";
 
@@ -44,8 +44,9 @@ function virtualStage(order: KanbanOrder): ProductionStage {
 
 function OrderCard({ order, dragging = false }: { order: KanbanOrder; dragging?: boolean }) {
   const stage = virtualStage(order);
-  const atRisk = isAtRisk(order.dueDate, stage, false);
-  const tone = atRisk ? "danger" : deadlineTone(manilaDayDiff(order.dueDate) < 0 ? "overdue" : manilaDayDiff(order.dueDate) === 0 ? "today" : manilaDayDiff(order.dueDate) <= 7 ? "this_week" : "later");
+  const isDone = isProductionDone(stage);
+  const atRisk = isAtRisk(order.dueDate, stage, isDone);
+  const tone = atRisk ? "danger" : deadlineTone(bucketForDueDate(order.dueDate, isDone));
   const totalQty = order.items.reduce((s, i) => s + i.quantity, 0);
   const productText = order.items[0]?.product?.name ?? order.items[0]?.customName ?? "—";
 
@@ -68,7 +69,7 @@ function OrderCard({ order, dragging = false }: { order: KanbanOrder; dragging?:
       </p>
       <div className="mt-2 flex items-center justify-between">
         <Badge tone={tone} dot className="text-[11px]">
-          {daysLabel(order.dueDate)}
+          {daysLabel(order.dueDate, isDone)}
         </Badge>
         {atRisk && <AlertTriangle className="h-3.5 w-3.5 text-danger" />}
       </div>

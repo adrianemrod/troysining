@@ -27,7 +27,9 @@ export function manilaDayDiff(date: Date | string): number {
 
 export type DeadlineBucket = "overdue" | "today" | "this_week" | "later";
 
-export function bucketForDueDate(dueDate: Date | string): DeadlineBucket {
+/** `isDone` mutes the urgency framing (overdue/today) once the work is actually finished. */
+export function bucketForDueDate(dueDate: Date | string, isDone = false): DeadlineBucket {
+  if (isDone) return "later";
   const diff = manilaDayDiff(dueDate);
   if (diff < 0) return "overdue";
   if (diff === 0) return "today";
@@ -35,12 +37,18 @@ export function bucketForDueDate(dueDate: Date | string): DeadlineBucket {
   return "later";
 }
 
-export function daysLabel(dueDate: Date | string): string {
+export function daysLabel(dueDate: Date | string, isDone = false): string {
+  if (isDone) return "Completed";
   const diff = manilaDayDiff(dueDate);
   if (diff < 0) return `${Math.abs(diff)}d overdue`;
   if (diff === 0) return "Due today";
   if (diff === 1) return "1 day left";
   return `${diff} days left`;
+}
+
+/** A production job is effectively finished once it's completed or staged for delivery pickup. */
+export function isProductionDone(stage: string | null | undefined): boolean {
+  return stage === "COMPLETED" || stage === "READY_FOR_DELIVERY";
 }
 
 /** Sort key: overdue first (most overdue first), then today, then this week, then later — all soonest first. */
