@@ -9,6 +9,7 @@ import {
   FolderOpen,
   ShieldCheck,
   Wallet,
+  Grid3x3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/production", label: "Production Tracker", icon: Factory, roles: ["ADMIN", "SALES", "PRODUCTION", "DELIVERY", "ENCODER"] },
   { href: "/delivery", label: "Delivery Tracker", icon: Truck, roles: ["ADMIN", "DELIVERY", "ENCODER"] },
   { href: "/files", label: "File Organizer", icon: FolderOpen, roles: ["ADMIN", "SALES", "PRODUCTION", "DELIVERY", "ENCODER"] },
+  { href: "/outs", label: "Outs Number", icon: Grid3x3, roles: ["ADMIN", "SALES", "PRODUCTION", "DELIVERY", "ENCODER"] },
   { href: "/admin", label: "Admin", icon: ShieldCheck, roles: ["ADMIN"] },
 ];
 
